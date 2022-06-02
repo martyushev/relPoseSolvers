@@ -4,4 +4,5 @@ Nister, D., Schaffalitzky, F.: Four Points in Two or Three Calibrated Views: The
 
 
 Average runtime: 97 microsec. (o2-optimization)
+
 Median error: 1.5e-3
