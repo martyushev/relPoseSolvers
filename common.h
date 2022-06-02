@@ -8,7 +8,7 @@
 #define MAXIT 10 // number of iterations for golden section search
 #define MAXLM 5 // max number of local minima (> 1), number of cost function evaluations is 2*MAXLM-1
 #define NCOLS 100 // number of columns in histogram
-#define NTRIALS 10000 // number of trials
+#define NTRIALS 100000 // number of trials
 
 
 struct Camera
