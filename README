@@ -1,6 +1,15 @@
 An implementation of the 4-point 3-view algorithm for metric reconstruction from
 
-Nister, D., Schaffalitzky, F.: Four Points in Two or Three Calibrated Views: Theory and Practice. Int. J. of Computer Vision 67(2), 211-231 (2006).
+@article{nister2006four,
+  title={Four points in two or three calibrated views: Theory and practice},
+  author={Nist{\'e}r, David and Schaffalitzky, Frederik},
+  journal={International Journal of Computer Vision},
+  volume={67},
+  number={2},
+  pages={211--231},
+  year={2006},
+  publisher={Springer}
+}
 
 On a system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM,
 
