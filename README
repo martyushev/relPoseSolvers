@@ -1,4 +1,4 @@
-An implementation of the 4-point 3-view algorithm for metric reconstruction from
+A C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
 
 @article{nister2006four,
   title={Four points in two or three calibrated views: Theory and practice},
@@ -11,7 +11,7 @@ An implementation of the 4-point 3-view algorithm for metric reconstruction from
   publisher={Springer}
 }
 
-On a system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM,
+On the system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM,
 
-Average runtime: 97 microsec. (o2)
+Average runtime: 97 microsec. (o2 optimization)
 Median error: 1.5e-3
