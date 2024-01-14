@@ -13,5 +13,5 @@ A C++ implementation of the 4-point 3-view algorithm for metric reconstruction f
 
 On the system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM,
 
-Average runtime: 97 microsec. (o2 optimization)
+Average runtime: 97 microsec. (optimization flag -o2)
 Median error: 1.5e-3
