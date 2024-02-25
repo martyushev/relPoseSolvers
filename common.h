@@ -51,7 +51,10 @@ struct Hist
 
 	void iniHist(const double, const double);
 	void updateHist(const double &);
+	void printHist();
 	double getMedian(const double);
+	double getMean();
+	double getFails(const double);
 };
 
 
@@ -88,6 +91,14 @@ void Hist::updateHist(const double &x)
 }
 
 
+void Hist::printHist()
+{
+	for (int i=0; i<NCOLS; ++i)
+		std::cout << u[i] << "\t" << n[i] << "\n";
+	std::cout << "\n";
+}
+
+
 // compute median (q=0.5) or lower quartile (q=0.25) on groupped data
 double Hist::getMedian(const double q)
 {
@@ -108,4 +119,32 @@ double Hist::getMedian(const double q)
 		}
 	}
     return u[m]+(Q-F+(double)n[m])/(double)n[m]*(u[m+1]-u[m]);
+}
+
+
+// compute mean on groupped data
+double Hist::getMean()
+{
+	int n_tot=0; // total frequency
+	double sum_fx=0.0;
+	for (int i=0; i<NCOLS; ++i)
+	{
+		n_tot+=n[i];
+		sum_fx+=0.5*(u[i]+u[i+1])*(double)n[i];
+	}
+	return sum_fx/(double)n_tot;
+}
+
+
+// compute fails on groupped data
+double Hist::getFails(const double q)
+{
+	int n_tot=0; // total frequency
+	int n_fail=0;
+	for (int i=0; i<NCOLS; ++i)
+	{
+		n_tot+=n[i];
+		if (u[i]>q) n_fail+=n[i];
+	}
+	return 100*(double)n_fail/(double)n_tot;
 }

@@ -22,7 +22,7 @@ void matrix_mult(const double A[9], const double B[9], double C[9])
 // generate camera centers
 void cameraCenters(double XO[_V1][3])
 {
-	// cameras' centers, the first camera is at the origin
+	// cameras' centers, 1st camera center is at the origin
 	double theta=rnd(0,PI), phi=rnd(-PI,PI), b=0.1; // b is baseline length
 
 	const double t=sin(theta)*b;
@@ -30,7 +30,7 @@ void cameraCenters(double XO[_V1][3])
 	XO[0][1]=cos(phi)*t;
 	XO[0][2]=cos(theta)*b;
 
-	for (int k=0; k<3; ++k) XO[1][k]=0.5*XO[0][k];
+	for (int k=0; k<3; ++k) XO[1][k]=0.5*XO[0][k]+rnd(-0.01,0.01);
 }
 
 

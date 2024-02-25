@@ -34,7 +34,7 @@ int main()
 		double T=timer.stop(); // stop timer
 		speed+=T;
 
-		double E=0; // numerical error
+		double E=0; // compute numerical error
 		for (int k=0; k<12; ++k)
 		{
 			const double t1=cam_gt.Rt[0][k]-cam_est.Rt[0][k], t2=cam_gt.Rt[1][k]-cam_est.Rt[1][k];
@@ -48,8 +48,11 @@ int main()
 
 	// results
 	std::cout << "\nNumber of successful trials: " << ntrials << "\n\n";
-	std::cout << "Average runtime: " << speed*((1e+6)/(double)ntrials) << " microseconds per call" << "\n\n";
-	std::cout << "Median numerical error: " << pow(10, hRt.getMedian(0.5)) << "\n\n";
+	std::cout << "Average runtime (ms): " << speed*((1e+3)/(double)ntrials) << "\n\n";
+	std::cout << "Median numerical error: " << hRt.getMedian(0.5) << "\n\n";
+	std::cout << "Mean numerical error: " << hRt.getMean() << "\n\n";
+	std::cout << "Fails (%): " << hRt.getFails(-1.) << "\n\n";
+	std::cout << "Distribution of the numerical error:\n"; hRt.printHist();
 
 	return 0;
 }

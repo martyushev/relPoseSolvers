@@ -74,7 +74,7 @@ void auxArrays::getA()
 	#endif
 
 	A[3][0][3]=1./A[3][0][3];
-	// inverse matrix
+	// inverse of matrix
 	A[3][0][0]=(A[2][1][1]*A[2][2][2]-A[2][2][1]*A[2][1][2])*A[3][0][3];
     A[3][0][1]=(A[2][2][0]*A[2][1][2]-A[2][1][0]*A[2][2][2])*A[3][0][3];
     A[3][0][2]=m1*A[3][0][3];
@@ -150,7 +150,7 @@ void nullQR(double A[9][2*_P], double Q[9][2], const int n, const int m)
 
 
 
-// compute adjoint matrix to A, B = |A| A^{-1}
+// compute adjoint matrix to A, which is B = det(A) A^{-1}
 void adjoint(const double A[], double B[], bool sym)
 {
 	if (sym)
@@ -213,7 +213,7 @@ void mult(const double A[], double B[], double C[], bool sym)
 
 
 
-// transpose matrix A
+// transpose of matrix A
 void trans(double A[])
 {
     double t=A[1];
@@ -229,7 +229,7 @@ void trans(double A[])
 
 
 
-// compute 2 conics E and G
+// compute conics E and G
 void auxArrays::getEG()
 {
 	double B[9][2*_P], C[2][9][2*_P], Q[9][2], H[2][9], adjH1[9];

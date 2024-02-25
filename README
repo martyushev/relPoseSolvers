@@ -1,4 +1,4 @@
-An implementation of the 4-point 3-view algorithm for metric reconstruction from
+A C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
 
 @article{nister2006four,
   title={Four points in two or three calibrated views: Theory and practice},
@@ -11,7 +11,31 @@ An implementation of the 4-point 3-view algorithm for metric reconstruction from
   publisher={Springer}
 }
 
-On a system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM,
+Experiments were performed on the system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM.
+- number of trials 10^5
+- optimization flag -o2
+- noise&outlier-free synthetic scene
+- error is computed as 0.5*log10(||P2gt - P2||^2 + ||P3gt - P3||^2)
+- MAXIT is the maximum number of iterations for the golden section method
+- MAXLM is the maximum number of local minima of the cost function
 
-Average runtime: 97 microsec. (o2)
-Median error: 1.5e-3
+1) Setup #1 (MAXLM = 5, MAXIT = 10)
+
+	Average runtime: 0.11 ms
+	Median error: -2.88
+	Mean error: -2.42
+	Fails (error > -1): 23.0%
+
+2) Setup #2 (MAXLM = 10, MAXIT = 20)
+
+	Average runtime: 0.31 ms
+	Median error: -5.41
+	Mean error: -4.79
+	Fails (error > -1): 11.5%
+
+3) Setup #3 (MAXLM = 20, MAXIT = 40)
+
+	Average runtime: 0.75 ms
+	Median error: -9.14
+	Mean error: -8.33
+	Fails (error > -1): 5.4%
