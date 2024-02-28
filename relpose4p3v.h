@@ -204,8 +204,8 @@ bool evalCameras(const double A[4][3][_P], const double e[2][3], Camera &cam)
     {
         const int i3=i+3, i6=i+6;
         cam.Rt[0][i]=Y[ii][0]*R[ii][i]+Y[ii][1]*R[ii][i3]+Y[ii][2]*R[ii][i6];
-        cam.Rt[0][i+3]=Y[ii][3]*R[ii][i]+Y[ii][4]*R[ii][i3]+Y[ii][5]*R[ii][i6];
-        cam.Rt[0][i+6]=Y[ii][6]*R[ii][i]+Y[ii][7]*R[ii][i3]+Y[ii][8]*R[ii][i6];
+        cam.Rt[0][i3]=Y[ii][3]*R[ii][i]+Y[ii][4]*R[ii][i3]+Y[ii][5]*R[ii][i6];
+        cam.Rt[0][i6]=Y[ii][6]*R[ii][i]+Y[ii][7]*R[ii][i3]+Y[ii][8]*R[ii][i6];
     }
 
     double XQ[_P][3];
@@ -282,6 +282,7 @@ void costFunction(const double &theta, const auxArrays &S, Camera &cam)
 // method of golden section
 void golden(const double lm[3], const auxArrays &S, Camera &cam)
 {
+	const double tol=1.e-12;
 	double x0=lm[0], x1, x2, x3=lm[2];
 	Camera cam1, cam2;
 
@@ -299,7 +300,7 @@ void golden(const double lm[3], const auxArrays &S, Camera &cam)
         cam2=cam;
         costFunction(x1, S, cam1);
 	}
-    for (int k=0; k<MAXIT; ++k)
+    for (int k=0; k<MAXIT && fabs(x3-x0)>tol*(fabs(x1)+fabs(x2)); ++k)
 	{
 		if (cam1.Err<cam2.Err)
 		{
@@ -333,14 +334,15 @@ int localMinima(const auxArrays &S, Camera cam[MAXLM])
     for (int i=1; i<2*MAXLM+1; ++i)
 		theta[i]=theta[i-1]+N1;
     
-    for (int i=0; i<2*MAXLM-1; ++i) // evaluate cost function at each theta[i]
+	#pragma omp parallel for shared(theta,S,cam1) schedule(dynamic) num_threads(NUM_THREADS)
+	for (int i=0; i<2*MAXLM-1; ++i) // evaluate cost function at each theta[i]
 		costFunction(theta[i], S, cam1[i]);
 	
     cam1[2*MAXLM-1]=cam1[0];
     cam1[2*MAXLM]=cam1[1];
     
     int n=0;
-    for (int i=1; i<2*MAXLM; ++i)
+    for (int i=1; i<2*MAXLM; ++i) // find local minima
     {
         const int im1=i-1, ip1=i+1;
         if (cam1[i].Err<cam1[im1].Err && cam1[i].Err<cam1[ip1].Err)
@@ -352,6 +354,7 @@ int localMinima(const auxArrays &S, Camera cam[MAXLM])
         }
     }
 
+	#pragma omp parallel for shared(n,lm,S,cam) schedule(dynamic) num_threads(NUM_THREADS)
     for (int i=0; i<n; ++i)
         golden(lm[i], S, cam[i]); // polish each local minimum by golden section method
 

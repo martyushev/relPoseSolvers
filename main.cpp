@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <cfloat>
+#include <omp.h> // add OpenMP support in Configuration Properties
+#define NUM_THREADS omp_get_max_threads() // number of threads computing in parallel
 
 #include "common.h"
 #include "synthData.h"
@@ -11,13 +13,12 @@
 int main()
 {
 	Hist hRt;
-	double speed=0, err=0;
-	Timer timer;
 	hRt.iniHist(-15, 2);
+	double speed=0;
+	Timer timer;
 
 	// ---------------------------------------------------------------------------------------------------------------------
 
-	std::cout.precision(DBL_DIG);
 	int ntrials=0;
 
 	for (int i=1; i<=NTRIALS; ++i)
@@ -25,34 +26,28 @@ int main()
 		double data[_V][3][_P];
 		Camera cam_gt, cam_est;
 
-		synthData(data, cam_gt); // synthetic data
+		synthData(data, cam_gt); // generate synthetic data
 
 		timer.start(); // start timer
 
 		if (!relative4p3v(data, cam_est)) continue; // run solver
 
-		double T=timer.stop(); // stop timer
-		speed+=T;
+		speed+=timer.stop(); // stop timer
 
-		double E=0; // compute numerical error
-		for (int k=0; k<12; ++k)
-		{
-			const double t1=cam_gt.Rt[0][k]-cam_est.Rt[0][k], t2=cam_gt.Rt[1][k]-cam_est.Rt[1][k];
-			E+=t1*t1+t2*t2;
-		}
-		E=0.5*log10(E);
-		hRt.updateHist(E);
+		hRt.updateHist(numError(cam_est.Rt, cam_gt.Rt)); // update error histogram
 
 		++ntrials;
 	}
 
 	// results
+	//std::cout.precision(DBL_DIG);
+	std::cout.precision(4);
 	std::cout << "\nNumber of successful trials: " << ntrials << "\n\n";
 	std::cout << "Average runtime (ms): " << speed*((1e+3)/(double)ntrials) << "\n\n";
 	std::cout << "Median numerical error: " << hRt.getMedian(0.5) << "\n\n";
 	std::cout << "Mean numerical error: " << hRt.getMean() << "\n\n";
 	std::cout << "Fails (%): " << hRt.getFails(-1.) << "\n\n";
-	std::cout << "Distribution of the numerical error:\n"; hRt.printHist();
+	std::cout << "Numerical error distribution:\n"; hRt.printHist();
 
 	return 0;
 }

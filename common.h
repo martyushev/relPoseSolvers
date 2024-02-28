@@ -5,8 +5,8 @@
 #define _V 3 // number of views
 #define _V1 (_V-1)
 #define _P 4 // number of points
-#define MAXIT 10 // number of iterations for golden section search
-#define MAXLM 5 // max number of local minima (> 1), number of cost function evaluations is 2*MAXLM-1
+#define MAXIT 30 // number of iterations for golden section search
+#define MAXLM 50 // max number of local minima (> 1), number of cost function evaluations is 2*MAXLM-1
 #define NCOLS 100 // number of columns in histogram
 #define NTRIALS 100000 // number of trials
 
@@ -93,6 +93,7 @@ void Hist::updateHist(const double &x)
 
 void Hist::printHist()
 {
+	std::cout.precision(3);
 	for (int i=0; i<NCOLS; ++i)
 		std::cout << u[i] << "\t" << n[i] << "\n";
 	std::cout << "\n";
@@ -147,4 +148,17 @@ double Hist::getFails(const double q)
 		if (u[i]>q) n_fail+=n[i];
 	}
 	return 100*(double)n_fail/(double)n_tot;
+}
+
+
+// compute numerical error
+double numError(const double P[2][12], const double Pgt[2][12])
+{
+	double err=0;
+	for (int k=0; k<12; ++k)
+	{
+		const double t1=P[0][k]-Pgt[0][k], t2=P[1][k]-Pgt[1][k];
+		err+=t1*t1+t2*t2;
+	}
+	return 0.5*log10(err);
 }
