@@ -55,23 +55,23 @@ bool p4p(const double A[4][3][_P], const double XQ[_P][3], Camera &cam)
 {
 	double p3[4][12], d10[3], d20[3], d21[3];
 	const double cosA[3]={2.*(A[2][0][1]*A[2][0][2]+A[2][1][1]*A[2][1][2]+A[2][2][1]*A[2][2][2]),
-						  2.*(A[2][0][0]*A[2][0][2]+A[2][1][0]*A[2][1][2]+A[2][2][0]*A[2][2][2]),
-						  2.*(A[2][0][0]*A[2][0][1]+A[2][1][0]*A[2][1][1]+A[2][2][0]*A[2][2][1])};
+					2.*(A[2][0][0]*A[2][0][2]+A[2][1][0]*A[2][1][2]+A[2][2][0]*A[2][2][2]),
+					2.*(A[2][0][0]*A[2][0][1]+A[2][1][0]*A[2][1][1]+A[2][2][0]*A[2][2][1])};
 
-    for (int i=0; i<3; ++i)
+	for (int i=0; i<3; ++i)
 	{
 		d10[i]=XQ[1][i]-XQ[0][i];
 		d20[i]=XQ[2][i]-XQ[0][i];
 		d21[i]=XQ[2][i]-XQ[1][i];
 	}
-    double den=d10[0]*d20[1]-d10[1]*d20[0];
-    if (!den) return 0;
+	double den=d10[0]*d20[1]-d10[1]*d20[0];
+	if (!den) return 0;
 	den=1./den;
-    
+	
 	const double D[3]={d21[0]*d21[0]+d21[1]*d21[1]+d21[2]*d21[2], d20[0]*d20[0]+d20[1]*d20[1]+d20[2]*d20[2], d10[0]*d10[0]+d10[1]*d10[1]+d10[2]*d10[2]};
-    const double c[4]={(d10[1]*d20[2]-d10[2]*d20[1])*den, (d10[2]*d20[0]-d10[0]*d20[2])*den, 1./(c[0]*c[0]+c[1]*c[1]+1.), 0.5*den};
+	const double c[4]={(d10[1]*d20[2]-d10[2]*d20[1])*den, (d10[2]*d20[0]-d10[0]*d20[2])*den, 1./(c[0]*c[0]+c[1]*c[1]+1.), 0.5*den};
 
-    const double D1=1.0/D[1], t1=D[0]*D1, t2=D[2]*D1, t3=t1+t2;
+	const double D1=1.0/D[1], t1=D[0]*D1, t2=D[2]*D1, t3=t1+t2;
 	const double cosA2[4]={cosA[0]*cosA[0], cosA[1]*cosA[1], cosA[2]*cosA[2], cosA[0]*cosA[2]};
 	const double t[3]={t1-t2, 1.-t[0], 1.+t[0]}, t6=t2*cosA2[0], t7=t1*cosA2[2], t8=t3*cosA2[3], t9=t8-cosA2[3], t02=2.*t[0];
 
@@ -92,22 +92,22 @@ bool p4p(const double A[4][3][_P], const double XQ[_P][3], Camera &cam)
 	{
 		if(v[i]<=0) continue;
 		const double vcosA=v[i]*cosA[0];
-        if (cosA[2]==vcosA) continue;
+		if (cosA[2]==vcosA) continue;
 		const double u=(t[2]-(t[1]*v[i]+t[0]*cosA[1])*v[i])/(cosA[2]-vcosA);
 		if (u<=0) continue;
-        const double uv=v[i]*v[i]+u*(u-vcosA);
-        if (uv<=0) continue;
-
+		const double uv=v[i]*v[i]+u*(u-vcosA);
+		if (uv<=0) continue;
+		
 		double Duv=D[0]/uv, fL0=sqrt(Duv), fL1=u*fL0, fL2=v[i]*fL0;
 		const double s1=Duv+D[2]-fL1*fL1, s2=Duv+D[1]-fL2*fL2;
-        const double dx=(s1*d20[1]-s2*d10[1])*c[3], dy=(s2*d10[0]-s1*d20[0])*c[3];
+		const double dx=(s1*d20[1]-s2*d10[1])*c[3], dy=(s2*d10[0]-s1*d20[0])*c[3];
 		const double t1=(c[0]*dx+c[1]*dy)*c[2], t0=(dx*dx+dy*dy-Duv)*c[2], t2=t1*t1-t0;
 		if (t2<0) continue;
-
+		
 		// coordinates of 3rd camera center
 		const double u1=(t1>0)? -t1-sqrt(t2):-t1+sqrt(t2);
 		double O3[3]={c[0]*u1+dx+XQ[0][0], c[1]*u1+dy+XQ[0][1], u1+XQ[0][2]}, w0[3], w1[3], w2[3];
-
+		
 		// triplets (XP[0]-O3, XP[1]-O3, XP[2]-O3) and (data[][0], data[][1], data[][2]) must define the same orientation
 		for (int k=0; k<3; ++k)
 		{
@@ -128,8 +128,8 @@ bool p4p(const double A[4][3][_P], const double XQ[_P][3], Camera &cam)
 		fL0=1./fL0;
 		fL1=1./fL1;
 		fL2=1./fL2;
-        const double W[9]={(XQ[0][0]-O3[0])*fL0, (XQ[1][0]-O3[0])*fL1, (XQ[2][0]-O3[0])*fL2, (XQ[0][1]-O3[1])*fL0, (XQ[1][1]-O3[1])*fL1,
-            (XQ[2][1]-O3[1])*fL2, (XQ[0][2]-O3[2])*fL0, (XQ[1][2]-O3[2])*fL1, (XQ[2][2]-O3[2])*fL2};
+		const double W[9]={(XQ[0][0]-O3[0])*fL0, (XQ[1][0]-O3[0])*fL1, (XQ[2][0]-O3[0])*fL2, (XQ[0][1]-O3[1])*fL0, (XQ[1][1]-O3[1])*fL1,
+				(XQ[2][1]-O3[1])*fL2, (XQ[0][2]-O3[2])*fL0, (XQ[1][2]-O3[2])*fL1, (XQ[2][2]-O3[2])*fL2};
 
 		p3[i][0]=A[3][0][0]*W[0]+A[3][0][1]*W[1]+A[3][0][2]*W[2];
 		p3[i][3]=A[3][1][0]*W[0]+A[3][1][1]*W[1]+A[3][1][2]*W[2];

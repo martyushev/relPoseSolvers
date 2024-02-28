@@ -16,20 +16,20 @@ int main()
 	hRt.iniHist(-15, 2);
 	double speed=0;
 	Timer timer;
-
-	// ---------------------------------------------------------------------------------------------------------------------
-
+	
+	// --------------------------------------------------------------------------------------------
+	
 	int ntrials=0;
-
+	
 	for (int i=1; i<=NTRIALS; ++i)
 	{
 		double data[_V][3][_P];
 		Camera cam_gt, cam_est;
-
+		
 		synthData(data, cam_gt); // generate synthetic data
-
+		
 		timer.start(); // start timer
-
+		
 		if (!relative4p3v(data, cam_est)) continue; // run solver
 
 		speed+=timer.stop(); // stop timer
@@ -40,7 +40,6 @@ int main()
 	}
 
 	// results
-	//std::cout.precision(DBL_DIG);
 	std::cout.precision(4);
 	std::cout << "\nNumber of successful trials: " << ntrials << "\n\n";
 	std::cout << "Average runtime (ms): " << speed*((1e+3)/(double)ntrials) << "\n\n";

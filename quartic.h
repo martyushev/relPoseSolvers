@@ -2,25 +2,25 @@
 int solveCubic(const double a[3], double x[3])
 {
 	const double third=0.3333333333333333, sqrt3=1.732050807568877;
-    const double p=-third*a[2], p2=p*p, f=p2-third*a[1], f3=f*f*f;
+	const double p=-third*a[2], p2=p*p, f=p2-third*a[1], f3=f*f*f;
 	const double g=(p2-0.5*a[1])*p-0.5*a[0], discr=g*g-f3; // (minus) discriminant
 	if (discr<0)
-    { // 3 simple real roots
-        const double t=sqrt(f), k=g/(f*t), phi=third*acos(k); // phi in [0, pi/3]
-        const double s=cos(phi)*t, t1=p-s, t2=sqrt3*sqrt(f-s*s);
+	{ // 3 simple real roots
+		const double t=sqrt(f), k=g/(f*t), phi=third*acos(k); // phi in [0, pi/3]
+		const double s=cos(phi)*t, t1=p-s, t2=sqrt3*sqrt(f-s*s);
 		x[0]=2.*s+p;
 		x[1]=t1-t2;
 		x[2]=t1+t2;
 		return 3;
-    }
+	}
 	else if (discr>0)
-    { // 1 real and 2 complex conjugate roots
+	{ // 1 real and 2 complex conjugate roots
 		const double t=sqrt(discr), s1=((g>0)-(t>0))? g-t:g+t, s2=f3/s1;
-        const double t1=(s1>0)? pow(s1,third):-pow(-s1,third), t2=f/t1;
+		const double t1=(s1>0)? pow(s1,third):-pow(-s1,third), t2=f/t1;
 		x[0]=t1+t2+p;
 		//x[1]=-0.5*(t1+t2)+p;  // real part of complex conjugate pair, imaginary part is 0.5*(t1-t2)*sqrt3
 		return 1;
-    }
+	}
 	else // discr==0
 	{
 		if (g)

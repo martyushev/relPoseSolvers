@@ -11,11 +11,13 @@
 #define NTRIALS 100000 // number of trials
 
 
+
 struct Camera
 {
 	double Err;
 	double Rt[_V1][12];
 };
+
 
 
 struct Timer
@@ -44,6 +46,7 @@ struct Timer
 };
 
 
+
 struct Hist
 {
 	double u[NCOLS+1];
@@ -58,12 +61,13 @@ struct Hist
 };
 
 
+
 // initialize histogram, uN > u0
 void Hist::iniHist(const double u0, const double uN)
 {
-    const double d=(uN-u0)/(double)NCOLS;
+	const double d=(uN-u0)/(double)NCOLS;
 	u[0]=u0;
-    u[NCOLS]=uN;
+	u[NCOLS]=uN;
 	n[0]=0;
 	for (int i=1; i<NCOLS; ++i)
 	{
@@ -71,6 +75,7 @@ void Hist::iniHist(const double u0, const double uN)
 		n[i]=0;
 	}
 }
+
 
 
 // update histogram with new value x
@@ -91,6 +96,8 @@ void Hist::updateHist(const double &x)
 }
 
 
+
+// print histogram
 void Hist::printHist()
 {
 	std::cout.precision(3);
@@ -100,6 +107,7 @@ void Hist::printHist()
 }
 
 
+
 // compute median (q=0.5) or lower quartile (q=0.25) on groupped data
 double Hist::getMedian(const double q)
 {
@@ -107,20 +115,21 @@ double Hist::getMedian(const double q)
 	for (int i=1; i<NCOLS; ++i)
 		n_tot+=n[i];
 	const double Q=q*(double)n_tot; // fraction of the total frequency
-
-    int m; // find class median, which is the first class with the value of cumulative frequency equal at least Q
-    double F=0.0; // cumulative frequency of the class median
+	
+	int m; // find class median, which is the first class with the value of cumulative frequency equal at least Q
+	double F=0.0; // cumulative frequency of the class median
 	for (int i=0; i<NCOLS; ++i)
 	{
-        F+=(double)n[i];
+		F+=(double)n[i];
 		if (F>=Q)
 		{
 			m=i;
 			break;
 		}
 	}
-    return u[m]+(Q-F+(double)n[m])/(double)n[m]*(u[m+1]-u[m]);
+	return u[m]+(Q-F+(double)n[m])/(double)n[m]*(u[m+1]-u[m]);
 }
+
 
 
 // compute mean on groupped data
@@ -137,6 +146,7 @@ double Hist::getMean()
 }
 
 
+
 // compute fails on groupped data
 double Hist::getFails(const double q)
 {
@@ -149,6 +159,7 @@ double Hist::getFails(const double q)
 	}
 	return 100*(double)n_fail/(double)n_tot;
 }
+
 
 
 // compute numerical error
