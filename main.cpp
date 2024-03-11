@@ -1,52 +1,50 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <cfloat>
 #include <omp.h> // add OpenMP support in Configuration Properties
-#define NUM_THREADS omp_get_max_threads() // number of threads computing in parallel
+#define NUM_THREADS omp_get_max_threads() // number of threads
 
 #include "common.h"
+#include "math.h"
 #include "synthData.h"
 #include "relpose4p3v.h"
+#include "stats.h"
 
 
 
 int main()
 {
-	Hist hRt;
-	hRt.iniHist(-15, 2);
-	double speed=0;
-	Timer timer;
-	
-	// --------------------------------------------------------------------------------------------
-	
-	int ntrials=0;
-	
+	Stats stats;
+
+	char dataOut[100];
+	sprintf_s(dataOut, "%sdata_%i_%i.txt", FOLDER_OUT, SCENE, MOTION);
+	std::ofstream exportData(dataOut, std::ios::out);
+	exportData.precision(DBL_DIG);
+
 	for (int i=1; i<=NTRIALS; ++i)
 	{
-		double data[_V][3][_P];
+		double data[NVIEWS][3][NPOINTS];
 		Camera cam_gt, cam_est;
 		
-		synthData(data, cam_gt); // generate synthetic data
+		synthData(data,cam_gt); // generate synthetic data and ground truth cameras
 		
-		timer.start(); // start timer
+		stats.timer.start(); // start timer
 		
-		if (!relative4p3v(data, cam_est)) continue; // run solver
+		if (!relative4p3v(data,cam_est)) continue; // run solver
 
-		speed+=timer.stop(); // stop timer
+		stats.totalTime+=stats.timer.stop(); // stop timer
 
-		hRt.updateHist(numError(cam_est.Rt, cam_gt.Rt)); // update error histogram
+		stats.updateStats(cam_est,cam_gt); // update statistics
 
-		++ntrials;
+		exportData << stats.errNum << "\n"; // export errors to file
 	}
+	exportData.close();
 
-	// results
-	std::cout.precision(4);
-	std::cout << "\nNumber of successful trials: " << ntrials << "\n\n";
-	std::cout << "Average runtime (ms): " << speed*((1e+3)/(double)ntrials) << "\n\n";
-	std::cout << "Median numerical error: " << hRt.getMedian(0.5) << "\n\n";
-	std::cout << "Mean numerical error: " << hRt.getMean() << "\n\n";
-	std::cout << "Fails (%): " << hRt.getFails(-1.) << "\n\n";
-	std::cout << "Numerical error distribution:\n"; hRt.printHist();
+	stats.printStats(); // print results
+
+	//int n;
+	//std::cin >> n;
 
 	return 0;
 }
