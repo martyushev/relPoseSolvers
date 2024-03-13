@@ -31,27 +31,27 @@ struct Timer
 
 struct Hist
 {
-	double u[NCOLS+1];
-	int n[NCOLS];
+	double u[NBINS+1];
+	int n[NBINS];
 
-	void iniHist(const double, const double);
+	void iniHist(const double &, const double &);
 	void updateHist(const double &);
 	void printHist();
-	double getMedian(const double);
+	double getMedian(const double &);
 	double getMean();
-	double getFails(const double);
+	double getFails(const double &);
 };
 
 
 
 // initialize histogram, uN > u0
-void Hist::iniHist(const double u0, const double uN)
+void Hist::iniHist(const double &u0, const double &uN)
 {
-	const double d=(uN-u0)/(double)NCOLS;
+	const double d=(uN-u0)/(double)NBINS;
 	u[0]=u0;
-	u[NCOLS]=uN;
+	u[NBINS]=uN;
 	n[0]=0;
-	for (int i=1; i<NCOLS; ++i)
+	for (int i=1; i<NBINS; ++i)
 	{
 		u[i]=u[i-1]+d;
 		n[i]=0;
@@ -63,9 +63,9 @@ void Hist::iniHist(const double u0, const double uN)
 // update histogram with new value x
 void Hist::updateHist(const double &x)
 {
-	int m=NCOLS;
+	int m=NBINS;
 	if (x<u[0]) m=0;
-	for (int i=0; i<NCOLS; ++i)
+	for (int i=0; i<NBINS; ++i)
 	{
 		if (x>=u[i] && x<u[i+1])
 		{
@@ -73,7 +73,7 @@ void Hist::updateHist(const double &x)
 			break;
 		}
 	}
-	if (x>=u[NCOLS]) m=NCOLS-1;
+	if (x>=u[NBINS]) m=NBINS-1;
 	++n[m];
 }
 
@@ -83,7 +83,7 @@ void Hist::updateHist(const double &x)
 void Hist::printHist()
 {
 	std::cout.precision(3);
-	for (int i=0; i<NCOLS; ++i)
+	for (int i=0; i<NBINS; ++i)
 		std::cout << u[i] << "\t" << n[i] << "\n";
 	std::cout << "\n";
 }
@@ -91,15 +91,15 @@ void Hist::printHist()
 
 
 // compute median (q=0.5) or lower quartile (q=0.25) on groupped data
-double Hist::getMedian(const double q)
+double Hist::getMedian(const double &q)
 {
 	int n_tot=n[0]; // total frequency
-	for (int i=1; i<NCOLS; ++i) n_tot+=n[i];
+	for (int i=1; i<NBINS; ++i) n_tot+=n[i];
 	const double Q=q*(double)n_tot; // fraction of the total frequency
 	
 	int m; // find class median, which is the first class with the value of cumulative frequency equal at least Q
 	double F=0.; // cumulative frequency of the class median
-	for (int i=0; i<NCOLS; ++i)
+	for (int i=0; i<NBINS; ++i)
 	{
 		F+=(double)n[i];
 		if (F>=Q)
@@ -118,7 +118,7 @@ double Hist::getMean()
 {
 	int n_tot=0; // total frequency
 	double sum_fx=0.;
-	for (int i=0; i<NCOLS; ++i)
+	for (int i=0; i<NBINS; ++i)
 	{
 		n_tot+=n[i];
 		sum_fx+=0.5*(u[i]+u[i+1])*(double)n[i];
@@ -129,22 +129,23 @@ double Hist::getMean()
 
 
 // compute fails on groupped data
-double Hist::getFails(const double q)
+double Hist::getFails(const double &q)
 {
 	int n_tot=0; // total frequency
 	int n_fail=0;
-	for (int i=0; i<NCOLS; ++i)
+	for (int i=0; i<NBINS; ++i)
 	{
 		n_tot+=n[i];
 		if (u[i]>q) n_fail+=n[i];
 	}
-	return 100*(double)n_fail/(double)n_tot;
+	n_fail+=NTRIALS-n_tot;
+	return 100.*(double)n_fail/(double)NTRIALS;
 }
 
 
 
 // compute numerical error
-double numError(const double P[2][12], const double Pgt[2][12])
+double numError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12])
 {
 	double err=0.;
 	for (int k=0; k<12; ++k)
@@ -157,29 +158,38 @@ double numError(const double P[2][12], const double Pgt[2][12])
 
 
 
-// compute rotational error
-void rotError(const double P[2][12], const double Pgt[2][12], double err[2])
+// compute rotational errors
+void rotError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double err[NVIEWS1])
 {
-	for (int i=0; i<2; ++i)
+	for (int i=0; i<NVIEWS1; ++i)
 	{
-		double t=0;
-		for (int j=0; j<9; ++j) t+=P[i][j]*Pgt[i][j];
-		t=0.5*(t-1);
-		err[i] = log10(acos(t));
+		double Rt[9];
+		transpose(P[i],Rt);
+		double R[9];
+		mult(Rt,Pgt[i],R);
+		const double cosR=0.5*(R[0]+R[4]+R[8]-1.);
+		const double v[3]={R[1]*R[5]-R[2]*(R[4]-1.), R[2]*R[3]+(1.-R[0])*R[5], (R[0]-1.)*(R[4]-1.)-R[3]*R[1]}; // rotation axis
+		const double fac=1./sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+		const double sinR=0.5*fac*(v[0]*(R[7]-R[5])+v[1]*(R[2]-R[6])+v[2]*(R[3]-R[1]));
+		err[i]=log10(atan2(fabs(sinR),cosR));
 	}
 }
 
 
 
-// compute translational error
-void translError(const double P[2][12], const double Pgt[2][12], double err[2])
+// compute translational errors
+void traError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double err[NVIEWS1])
 {
-	for (int i=0; i<2; ++i)
+	for (int i=0; i<NVIEWS1; ++i)
 	{
 		const double fac1=Pgt[i][9]*Pgt[i][9]+Pgt[i][10]*Pgt[i][10]+Pgt[i][11]*Pgt[i][11];
 		const double fac2=P[i][9]*P[i][9]+P[i][10]*P[i][10]+P[i][11]*P[i][11];
-		const double t=(Pgt[i][9]*P[i][9]+Pgt[i][10]*P[i][10]+Pgt[i][11]*P[i][11])/sqrt(fac1*fac2);
-		err[i]=log10(acos(t));
+		const double cosT=(Pgt[i][9]*P[i][9]+Pgt[i][10]*P[i][10]+Pgt[i][11]*P[i][11])/sqrt(fac1*fac2);
+		const double x[3]={-P[i][10]*Pgt[i][11]+P[i][11]*Pgt[i][10], P[i][9]*Pgt[i][11]-P[i][11]*Pgt[i][9], -P[i][9]*Pgt[i][10]+P[i][10]*Pgt[i][9]};
+		const double sinT=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+		const double t1=atan2(sinT,cosT), t2=atan2(sinT,-cosT);
+		err[i]=(t1<t2)? t1:t2;
+		err[i]=log10(err[i]);
 	}
 }
 
@@ -188,13 +198,18 @@ void translError(const double P[2][12], const double Pgt[2][12], double err[2])
 struct Stats
 {
 	Timer timer;
-	Hist hNum, hRot, hTra;
+	Hist hNum, hRot[NVIEWS1], hTra[NVIEWS1];
 	int ntrials;
-	double totalTime, errNum;
+	double totalTime, errNum, errRot[2], errTra[2];
 
 	Stats()
 	{
 		hNum.iniHist(-15,2);
+		for (int i=0; i<NVIEWS1; ++i)
+		{
+			hRot[i].iniHist(-15,2);
+			hTra[i].iniHist(-15,2);
+		}
 		ntrials=0;
 		totalTime=0.;
 	}
@@ -208,7 +223,14 @@ struct Stats
 void Stats::updateStats(const Camera &cam_est, const Camera &cam_gt)
 {
 	errNum=numError(cam_est.Rt,cam_gt.Rt);
-	hNum.updateHist(errNum); // update error histogram
+	hNum.updateHist(errNum);
+	rotError(cam_est.Rt,cam_gt.Rt,errRot);
+	traError(cam_est.Rt,cam_gt.Rt,errTra);
+	for (int i=0; i<NVIEWS1; ++i)
+	{
+		hRot[i].updateHist(errRot[i]);
+		hTra[i].updateHist(errTra[i]);
+	}
 	++ntrials;
 }
 
@@ -219,9 +241,13 @@ void Stats::printStats()
 	std::cout.precision(4);
 	std::cout << "\nNumber of threads: " << NUM_THREADS << "\n\n";
 	std::cout << "Number of successful trials: " << ntrials << "\n\n";
+	std::cout << "Fails (%): " << hNum.getFails(-2.) << "\n\n";
 	std::cout << "Average runtime (ms): " << totalTime*((1e+3)/(double)ntrials) << "\n\n";
 	std::cout << "Median numerical error: " << hNum.getMedian(0.5) << "\n\n";
 	std::cout << "Mean numerical error: " << hNum.getMean() << "\n\n";
-	std::cout << "Fails (%): " << hNum.getFails(-2.) << "\n\n";
+	std::cout << "Median rot. error for 2nd camera (degrees): " << (180./PI)*pow(10.,hRot[0].getMedian(0.5)) << "\n\n";
+	std::cout << "Median transl. error for 2nd camera (degrees): " << (180./PI)*pow(10.,hTra[0].getMedian(0.5)) << "\n\n";
+	std::cout << "Median rot. error for 3rd camera (degrees): " << (180./PI)*pow(10.,hRot[1].getMedian(0.5)) << "\n\n";
+	std::cout << "Median transl. error for 3rd camera (degrees): " << (180./PI)*pow(10.,hTra[1].getMedian(0.5)) << "\n\n";
 	std::cout << "Numerical error distribution:\n"; hNum.printHist();
 }

@@ -185,7 +185,7 @@ bool getCameras(const double A[NVIEWS+1][3][NPOINTS], const double Ht[9], const 
 	const double l0[3]={B1[0]*e[0][0]+B1[1]*e[0][1]+B1[2]*e[0][2], B1[1]*e[0][0]+B1[3]*e[0][1]+B1[4]*e[0][2], B1[2]*e[0][0]+B1[4]*e[0][1]+B1[5]*e[0][2]};
 	const double l1[3]={B1[0]*e[1][0]+B1[1]*e[1][1]+B1[2]*e[1][2], B1[1]*e[1][0]+B1[3]*e[1][1]+B1[4]*e[1][2], B1[2]*e[1][0]+B1[4]*e[1][1]+B1[5]*e[1][2]};
 	const double xa[3]={l0[1]*l1[2]-l0[2]*l1[1], l0[2]*l1[0]-l0[0]*l1[2], l0[0]*l1[1]-l0[1]*l1[0]};
-	const double u[3]={0.,xa[2],-xa[1]}; // vector u!=0 can be arbitrary
+	const double u[3]={0.,xa[2],-xa[1]}; // u is arbitrary nonzero vector
 	const double a=(u[1]*xa[2]-u[2]*xa[1])*e[0][0]+(u[2]*xa[0]-u[0]*xa[2])*e[0][1]+(u[0]*xa[1]-u[1]*xa[0])*e[0][2];
 	const double b=l0[0]*u[0]+l0[1]*u[1]+l0[2]*u[2];
 	const double F[9]={a*B1[0], a*B1[1]+b*xa[2], a*B1[2]-b*xa[1], a*B1[1]-b*xa[2], a*B1[3], a*B1[4]+b*xa[0], a*B1[2]+b*xa[1], a*B1[4]-b*xa[0], a*B1[5]};

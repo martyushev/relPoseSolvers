@@ -19,7 +19,7 @@ int main()
 
 	char dataOut[100];
 	sprintf_s(dataOut, "%sdata_%i_%i.txt", FOLDER_OUT, SCENE, MOTION);
-	std::ofstream exportData(dataOut, std::ios::out);
+	std::ofstream exportData(dataOut,std::ios::out);
 	exportData.precision(DBL_DIG);
 
 	for (int i=1; i<=NTRIALS; ++i)
@@ -43,8 +43,8 @@ int main()
 
 	stats.printStats(); // print results
 
-	//int n;
-	//std::cin >> n;
+	int n;
+	std::cin >> n;
 
 	return 0;
 }
