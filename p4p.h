@@ -1,32 +1,3 @@
-// average rotation matrix
-void aveRot(double Rt[12])
-{
-	// normalize the 1st column of Rt
-	double fac=1./sqrt(Rt[0]*Rt[0]+Rt[3]*Rt[3]+Rt[6]*Rt[6]);
-	Rt[0]*=fac;
-	Rt[3]*=fac;
-	Rt[6]*=fac;
-
-	// make first two columns orthogonal
-	fac=Rt[0]*Rt[1]+Rt[3]*Rt[4]+Rt[6]*Rt[7];
-	Rt[1]-=Rt[0]*fac;
-	Rt[4]-=Rt[3]*fac;
-	Rt[7]-=Rt[6]*fac;
-
-	// normalize the 2nd column of Rt
-	fac=1./sqrt(Rt[1]*Rt[1]+Rt[4]*Rt[4]+Rt[7]*Rt[7]);
-	Rt[1]*=fac;
-	Rt[4]*=fac;
-	Rt[7]*=fac;
-
-	// the last column is the cross product of the first two columns 
-	Rt[2]=Rt[3]*Rt[7]-Rt[4]*Rt[6];
-	Rt[5]=Rt[1]*Rt[6]-Rt[0]*Rt[7];
-	Rt[8]=Rt[0]*Rt[4]-Rt[1]*Rt[3];
-}
-
-
-
 // output is either 1 or 0 (no solution found)
 bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camera &cam)
 {
@@ -100,7 +71,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 		fL1=1./fL1;
 		fL2=1./fL2;
 		const double W[9]={(Q[0][0]-O3[0])*fL0, (Q[1][0]-O3[0])*fL1, (Q[2][0]-O3[0])*fL2, (Q[0][1]-O3[1])*fL0, (Q[1][1]-O3[1])*fL1,
-				(Q[2][1]-O3[1])*fL2, (Q[0][2]-O3[2])*fL0, (Q[1][2]-O3[2])*fL1, (Q[2][2]-O3[2])*fL2};
+			(Q[2][1]-O3[1])*fL2, (Q[0][2]-O3[2])*fL0, (Q[1][2]-O3[2])*fL1, (Q[2][2]-O3[2])*fL2};
 
 		P3[i][0]=A[3][0][0]*W[0]+A[3][0][1]*W[1]+A[3][0][2]*W[2];
 		P3[i][1]=A[3][0][0]*W[3]+A[3][0][1]*W[4]+A[3][0][2]*W[5];
@@ -111,8 +82,6 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 		P3[i][6]=A[3][2][0]*W[0]+A[3][2][1]*W[1]+A[3][2][2]*W[2];
 		P3[i][7]=A[3][2][0]*W[3]+A[3][2][1]*W[4]+A[3][2][2]*W[5];
 		P3[i][8]=A[3][2][0]*W[6]+A[3][2][1]*W[7]+A[3][2][2]*W[8];
-
-		aveRot(P3[i]);
 
 		P3[i][9]=-P3[i][0]*O3[0]-P3[i][1]*O3[1]-P3[i][2]*O3[2];
 		P3[i][10]=-P3[i][3]*O3[0]-P3[i][4]*O3[1]-P3[i][5]*O3[2];

@@ -6,7 +6,7 @@
 
 
 // uniformly distributed random numbers from [a, b]
-double rnd(const double &a, const double &b)
+inline double rnd(const double &a, const double &b)
 {
 	return (b-a)*rand()/(double)RAND_MAX+a;
 }

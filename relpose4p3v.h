@@ -3,6 +3,7 @@
 
 
 
+// efficient singular value decomposition of an essential matrix E
 void svdE(const double E[9], double U[9], double Vt[9])
 {
 	const double E0[3]={E[1]*E[5]-E[2]*E[4], E[2]*E[3]-E[0]*E[5], E[0]*E[4]-E[1]*E[3]},
@@ -78,24 +79,24 @@ int getEpipoles(const auxArrays &S, const double u[2], double B1[6], double e[4]
 	}
 
 	const double f=1./(B1[0]*G1[1]-B1[1]*G1[0]), fd=2.*f, fh=0.5*f;
-    const double a=(G1[1]*B1[2]-B1[1]*G1[2])*fd;
-    const double c=(B1[0]*G1[2]-G1[0]*B1[2])*f, c2=c*c, ac=a*c, cd=2.*c;
+	const double a=(G1[1]*B1[2]-B1[1]*G1[2])*fd;
+	const double c=(B1[0]*G1[2]-G1[0]*B1[2])*f, c2=c*c, ac=a*c, cd=2.*c;
 	const double g[3]={(G1[1]*B1[3]-B1[1]*G1[3])*f, (G1[1]*B1[4]-B1[1]*G1[4])*fd, (G1[1]*B1[5]-B1[1]*G1[5])*f};
 	const double d[3]={(B1[0]*G1[3]-G1[0]*B1[3])*fh, (B1[0]*G1[4]-G1[0]*B1[4])*f, (B1[0]*G1[5]-G1[0]*B1[5])*fh};
-
+	
 	double p[5], v[4];
 	p[4]=d[0]*d[0]+g[0];
-    p[3]=d[0]*(-a+2.*d[1])+cd*g[0]+g[1];
-    p[2]=d[0]*(-ac+2.*d[2])+cd*g[1]+d[1]*(d[1]-a)+c2*g[0]+g[2];
-    p[1]=d[1]*(-ac+2.*d[2])+cd*g[2]-d[2]*a+c2*g[1];
-    p[0]=d[2]*(-ac+d[2])+c2*g[2];
+	p[3]=d[0]*(-a+2.*d[1])+cd*g[0]+g[1];
+	p[2]=d[0]*(-ac+2.*d[2])+cd*g[1]+d[1]*(d[1]-a)+c2*g[0]+g[2];
+	p[1]=d[1]*(-ac+2.*d[2])+cd*g[2]-d[2]*a+c2*g[1];
+	p[0]=d[2]*(-ac+d[2])+c2*g[2];
 
 	const int nv=solveQuartic(p,v); // find all real roots of the quartic polynomial
 
 	for (int k=0; k<nv; ++k)
 	{
 		const double v1=v[k], u1=-(d[0]*v1*v1+d[1]*v1+d[2])/(v1+c);
-        e[k][0][0]=u1;
+		e[k][0][0]=u1;
 		e[k][0][1]=v1;
 		e[k][0][2]=1.;
 		e[k][1][0]=V1[0]*e[k][0][0]+V1[1]*e[k][0][1]+V1[2];
@@ -185,7 +186,7 @@ bool getCameras(const double A[NVIEWS+1][3][NPOINTS], const double Ht[9], const 
 	const double l0[3]={B1[0]*e[0][0]+B1[1]*e[0][1]+B1[2]*e[0][2], B1[1]*e[0][0]+B1[3]*e[0][1]+B1[4]*e[0][2], B1[2]*e[0][0]+B1[4]*e[0][1]+B1[5]*e[0][2]};
 	const double l1[3]={B1[0]*e[1][0]+B1[1]*e[1][1]+B1[2]*e[1][2], B1[1]*e[1][0]+B1[3]*e[1][1]+B1[4]*e[1][2], B1[2]*e[1][0]+B1[4]*e[1][1]+B1[5]*e[1][2]};
 	const double xa[3]={l0[1]*l1[2]-l0[2]*l1[1], l0[2]*l1[0]-l0[0]*l1[2], l0[0]*l1[1]-l0[1]*l1[0]};
-	const double u[3]={0.,xa[2],-xa[1]}; // u is arbitrary nonzero vector
+	const double u[3]={0.,xa[2],-xa[1]}; // u is any non-zero vector
 	const double a=(u[1]*xa[2]-u[2]*xa[1])*e[0][0]+(u[2]*xa[0]-u[0]*xa[2])*e[0][1]+(u[0]*xa[1]-u[1]*xa[0])*e[0][2];
 	const double b=l0[0]*u[0]+l0[1]*u[1]+l0[2]*u[2];
 	const double F[9]={a*B1[0], a*B1[1]+b*xa[2], a*B1[2]-b*xa[1], a*B1[1]-b*xa[2], a*B1[3], a*B1[4]+b*xa[0], a*B1[2]+b*xa[1], a*B1[4]-b*xa[0], a*B1[5]};
@@ -243,6 +244,7 @@ void costFunction(const double &theta, const auxArrays &S, Camera &cam)
 
 
 // method of golden section
+// this function adapted from "Numerical recipes in C" by Press et al.
 void golden(const double lm[3], const auxArrays &S, Camera &cam)
 {
 	const double tol=1.e-12;
