@@ -7,5 +7,5 @@
 #define SCENE 0 // 0 - generic scene, 1 - planar scene
 #define MOTION 0 // 0 - generic motion, 1 - sideway motion, 2 - forward motion
 #define NOISE 0.0 // noise level
-#define NTRIALS 100000 // number of trials
+#define NTRIALS 10000 // number of trials
 #define FOLDER_OUT "..\\res\\"

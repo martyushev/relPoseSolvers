@@ -72,15 +72,92 @@ void cameraMatrices(const double O[NVIEWS1][3], double Rt[NVIEWS1][12])
 
 
 
-// generate a scene point
-void scenePoints(double Q[NPOINTS][3])
+// generate scene points
+void scenePoints(double Q[NPOINTS][3], const int &k)
 {
-	const double d=10, fov=PI/4., w=2.*d*tan(0.5*fov), h=w*0.8, depth=SCENE? 0.:d*rnd(0.,1.);
+	const double d=10, fov=PI/4., w=2.*d*tan(0.5*fov), h=w*0.8, depth=SCENE? 0.:0.5*d;
 	for (int i=0; i<NPOINTS; ++i)
 	{
 		Q[i][0]=0.5*rnd(-w,w);
 		Q[i][1]=0.5*rnd(-h,h);
 		Q[i][2]=rnd(d,d+depth);
+	}
+
+	if (k==0);
+	// degenerate point configurations
+	else if (k==1)
+		{ // 3 points on a line
+		const double a=rnd(0.2,0.8);
+		Q[3][0]=Q[1][0]+a*(Q[2][0]-Q[1][0]);
+		Q[3][1]=Q[1][1]+a*(Q[2][1]-Q[1][1]);
+		Q[3][2]=Q[1][2]+a*(Q[2][2]-Q[1][2]);
+	}
+	else if (k==2)
+	{ // points on a circle
+		const double r=8;
+		for (int i=0; i<NPOINTS; ++i)
+		{
+			double phi=rnd(0,2*PI);
+			Q[i][0]=r*cos(phi);
+			Q[i][1]=r*sin(phi);
+			Q[i][2]=d;
+		}
+	}
+	else if (k==3)
+	{ // points at vertices of a rectangle
+		Q[0][0]=-w;
+		Q[0][1]=-h;
+		Q[0][2]=d;
+		Q[1][0]=-w;
+		Q[1][1]=h;
+		Q[1][2]=d;
+		Q[2][0]=w;
+		Q[2][1]=-h;
+		Q[2][2]=d;
+		Q[3][0]=w;
+		Q[3][1]=h;
+		Q[3][2]=d;
+	}
+}
+
+
+
+
+void degenConfig(double Q[NPOINTS][3], const int &k)
+{
+	if (k==0)
+	{ // 3 points on a line
+		const double a=rnd(0.2,0.8);
+		Q[3][0]=Q[1][0]+a*(Q[2][0]-Q[1][0]);
+		Q[3][1]=Q[1][1]+a*(Q[2][1]-Q[1][1]);
+		Q[3][2]=Q[1][2]+a*(Q[2][2]-Q[1][2]);
+	}
+	else if (k==1)
+	{ // points on a circle
+		const double d=10, r=8;
+		for (int i=0; i<NPOINTS; ++i)
+		{
+			double phi=rnd(0,2*PI);
+			Q[i][0]=r*cos(phi);
+			Q[i][1]=r*sin(phi);
+			Q[i][2]=d;
+		}
+	}
+	else if (k==2)
+	{ // points at vertices of a rectangle
+		const double d=10, w=8, h=0.8*w;
+		Q[0][0]=-w;
+		Q[0][1]=-h;
+		Q[0][2]=d;
+		Q[1][0]=-w;
+		Q[1][1]=h;
+		Q[1][2]=d;
+		Q[2][0]=w;
+		Q[2][1]=-h;
+		Q[2][2]=d;
+		Q[3][0]=w;
+		Q[3][1]=h;
+		Q[3][2]=d;
 	}
 }
 
@@ -133,7 +210,7 @@ void synthData(double data[NVIEWS][3][NPOINTS], Camera &cam)
 	double O[NVIEWS1][3], Q[NPOINTS][3], pixel=1.e-4;
 	cameraCenters(O);
 	cameraMatrices(O,cam.Rt);
-	scenePoints(Q);
+	scenePoints(Q,0);
 	projectPoints(cam.Rt,Q,data);
 	imageNoise(pixel*NOISE, data);
 }

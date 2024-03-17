@@ -16,7 +16,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 	const double cosA2[4]={A[3][0][3]*A[3][0][3], A[3][1][3]*A[3][1][3], A[3][2][3]*A[3][2][3], A[3][0][3]*A[3][2][3]};
 	const double t[3]={t1-t2, 1.-t[0], 1.+t[0]}, t6=t2*cosA2[0], t7=t1*cosA2[2], t8=t3*cosA2[3], t9=t8-cosA2[3], t02=2.*t[0];
 
-	// coefficients of quartic polynomial pol
+	// coefficients of quartic polynomial
 	double p[5], v[4];
 	p[4]=t[1]*t[1]-t6;
 	p[3]=(t6+t02*t[1])*A[3][1][3]+t9;
@@ -31,7 +31,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 	cam.Err=1.;
 	for (int i=0; i<nv; ++i)
 	{
-		if(v[i]<=0) continue;
+		if (v[i]<=0) continue;
 		const double vcosA=v[i]*A[3][0][3];
 		if (A[3][2][3]==vcosA) continue;
 		const double u=(t[2]-(t[1]*v[i]+t[0]*A[3][1][3])*v[i])/(A[3][2][3]-vcosA);
@@ -70,8 +70,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 		fL0=1./fL0;
 		fL1=1./fL1;
 		fL2=1./fL2;
-		const double W[9]={(Q[0][0]-O3[0])*fL0, (Q[1][0]-O3[0])*fL1, (Q[2][0]-O3[0])*fL2, (Q[0][1]-O3[1])*fL0, (Q[1][1]-O3[1])*fL1,
-			(Q[2][1]-O3[1])*fL2, (Q[0][2]-O3[2])*fL0, (Q[1][2]-O3[2])*fL1, (Q[2][2]-O3[2])*fL2};
+		const double W[9]={(Q[0][0]-O3[0])*fL0, (Q[1][0]-O3[0])*fL1, (Q[2][0]-O3[0])*fL2, (Q[0][1]-O3[1])*fL0, (Q[1][1]-O3[1])*fL1, (Q[2][1]-O3[1])*fL2, (Q[0][2]-O3[2])*fL0, (Q[1][2]-O3[2])*fL1, (Q[2][2]-O3[2])*fL2};
 
 		P3[i][0]=A[3][0][0]*W[0]+A[3][0][1]*W[1]+A[3][0][2]*W[2];
 		P3[i][1]=A[3][0][0]*W[3]+A[3][0][1]*W[4]+A[3][0][2]*W[5];
@@ -99,8 +98,8 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 			imin=i;
 		}
 	}
-
 	if (cam.Err==1.) return 0;
+
 	for (int k=0; k<12; ++k) cam.Rt[1][k]=P3[imin][k];
 
 	return 1;

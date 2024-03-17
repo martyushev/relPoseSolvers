@@ -1,7 +1,7 @@
 #define PI 3.1415926535897932385
 #define RATIO 0.6180339887498948482
-#define THIRD 0.3333333333333333333
-#define SQRT3 1.7320508075688772935
+
+#include "solvePoly.h"
 
 
 
@@ -143,100 +143,146 @@ void transpose(const double A[9], double B[9])
 
 
 
-// solve for real roots of cubic polynomial x^3 + a[2]*x^2 + a[1]*x + a[0]
-int solveCubic(const double a[3], double x[3])
+inline double getVol(const double A[3][NPOINTS], const int ind[NPOINTS])
 {
-	const double p=-THIRD*a[2], p2=p*p, f=p2-THIRD*a[1], f3=f*f*f;
-	const double g=(p2-0.5*a[1])*p-0.5*a[0], discr=g*g-f3; // (minus) discriminant
-	if (discr<0)
-	{ // 3 simple real roots
-		const double t=sqrt(f), k=g/(f*t), phi=THIRD*acos(k); // phi in [0, pi/3]
-		const double s=cos(phi)*t, t1=p-s, t2=SQRT3*sqrt(f-s*s);
-		x[0]=2.*s+p;
-		x[1]=t1-t2;
-		x[2]=t1+t2;
-		return 3;
-	}
-	else if (discr>0)
-	{ // 1 real and 2 complex conjugate roots
-		const double t=sqrt(discr), s1=((g>0)-(t>0))? g-t:g+t, s2=f3/s1;
-		const double t1=(s1>0)? pow(s1,THIRD):-pow(-s1,THIRD), t2=f/t1;
-		x[0]=t1+t2+p;
-		//x[1]=-0.5*(t1+t2)+p;  // real part of the complex conjugate pair, imaginary part is 0.5*(t1-t2)*SQRT3
-		return 1;
-	}
-	else // discr==0
-	{
-		if (g)
-		{ // 2 multiple real roots
-			const double s=(g>0)? pow(g,THIRD):-pow(-g,THIRD);
-			x[0]=2.*s+p;
-			x[1]=x[2]=p-s;
-			return 2;
-		}
-		else
-		{ // 3 multiple real roots
-			x[0]=x[1]=x[2]=p;
-			return 1;
-		}
-	}
+	const double m1=A[1][ind[0]]*A[2][ind[1]]-A[2][ind[0]]*A[1][ind[1]],
+		m2=A[0][ind[1]]*A[2][ind[0]]-A[0][ind[0]]*A[2][ind[1]],
+		m3=A[0][ind[0]]*A[1][ind[1]]-A[0][ind[1]]*A[1][ind[0]];
+	
+	return A[0][ind[2]]*m1+A[1][ind[2]]*m2+A[2][ind[2]]*m3;
 }
 
 
 
-// solve for real roots of quartic polynomial a[4]*x^4 + a[3]*x^3 + a[2]*x^2 + a[1]*x + a[0]
-int solveQuartic(const double a[5], double x[4])
+// permute image points to improve numerics
+inline void iniPerm(const double data[NVIEWS][3][NPOINTS], double A[NVIEWS+1][3][NPOINTS])
 {
-	const double a4=0.25/a[4], b[4]={a[0]*a4, a[1]*a4, a[2]*a4, a[3]*a4};
-	const double e=b[3]*b[3], q=b[2]-1.5*e, r=0.5*b[1]+(e-b[2])*b[3], s=b[0]-b[1]*b[3]+(b[2]-0.75*e)*e, q2=2.*q;
-
-	if (!q && !r && !s)
-	{ // 4 multiple real roots
-		x[0]=-b[3];
-		return 1;
-	}
-	
-	const double c[3]={-r*r, q*q-s, q2};
-	double y[3];
-
-	const int nr3=solveCubic(c,y);
-
-	double y_pos=0; // find positive root of the cubic equation
-	for (int i=0; i<nr3; ++i)
-		if (y[i]>0)
+	int m=0, ind[4][NPOINTS]={{2,3,1,0}, {2,0,3,1}, {0,1,3,2}, {2,1,0,3}};
+	double maxVol=fabs(getVol(data[0],ind[0]));
+	for (int i=1; i<4; ++i)
+	{
+		const double vol=fabs(getVol(data[0],ind[i]));
+		if (vol<maxVol)
 		{
-			y_pos=y[i];
-			break;
+			m=i;
+			maxVol=vol;
 		}
-	if (!y_pos) return 0;
-
-	const double k=sqrt(y_pos), l=y_pos+q2, m=2.*r/k, f1=m-l, f2=-m-l;
-	int nr4;
-	if (f1>0)
-	{ // 2 simple real roots
-		const double d=sqrt(f1), t1=-k-b[3];
-		x[0]=t1-d;
-		x[1]=t1+d;
-		nr4=2;
-	}
-	else if (f1<0)
-		nr4=0;
-	else // f1==0
-	{ // 2 multiple real roots
-		x[0]=-k-b[3];
-		nr4=1;
 	}
 
-	if (f2>0)
-	{ // 2 more simple real roots
-		const double d=sqrt(f2), t2=k-b[3];
-		x[nr4++]=t2-d;
-		x[nr4++]=t2+d;
+	for (int j=0; j<NVIEWS; ++j)
+		for (int i=0; i<NPOINTS; ++i)
+			for (int k=0; k<3; ++k)
+				A[j][k][i]=data[j][k][ind[m][i]];
+}
+
+
+
+// triangulate scene point Q_i using the pair of cameras [I 0] and Rt = [R t]
+void triang2v(const double A[NVIEWS+1][3][NPOINTS], const double Rt[12], const int &i, double Q[NPOINTS][3])
+{
+	const double t1=((Rt[3]*A[0][0][i]+Rt[4]*A[0][1][i]+Rt[5]*A[0][2][i])*A[1][2][i]-(Rt[6]*A[0][0][i]+Rt[7]*A[0][1][i]+Rt[8]*A[0][2][i])*A[1][1][i]);
+	const double t2=((Rt[0]*A[0][0][i]+Rt[1]*A[0][1][i]+Rt[2]*A[0][2][i])*A[1][2][i]-(Rt[6]*A[0][0][i]+Rt[7]*A[0][1][i]+Rt[8]*A[0][2][i])*A[1][0][i]);
+	double Q3;
+	if (fabs(t1)>fabs(t2))
+	{
+		const double t=Rt[11]*A[1][1][i]-Rt[10]*A[1][2][i];
+		Q3=t/t1;
 	}
-	else if (f2<0)
-		return nr4;
-	else // f2==0
-		x[nr4++]=k-b[3];
+	else
+	{
+		const double t=Rt[11]*A[1][0][i]-Rt[9]*A[1][2][i];
+		Q3=t/t2;
+	}
+
+	Q[i][0]=A[0][0][i]*Q3;
+	Q[i][1]=A[0][1][i]*Q3;
+	Q[i][2]=A[0][2][i]*Q3;
+}
+
+
+
+// check the cheirality constraint
+bool cheirality(const double A[NVIEWS+1][3][NPOINTS], double Rt[12], double Q[NPOINTS][3])
+{
+	triang2v(A,Rt,0,Q); // triangulate first scene point
 	
-	return nr4;
+	const double c1=Q[0][2], c2=Rt[6]*Q[0][0]+Rt[7]*Q[0][1]+Rt[8]*Q[0][2]+Rt[11];
+	if (c1>0 && c2>0); // Rt2 is correct
+	else if (c1<0 && c2<0) // R2 is correct, t2=-t2
+	{
+		Rt[9]=-Rt[9];
+		Rt[10]=-Rt[10];
+		Rt[11]=-Rt[11];
+	}
+	else
+	{ // in this case R2 = Ht*R2, where Ht = -I + 2*(t2*t2')/(t2'*t2)
+		const double b=2./(Rt[9]*Rt[9]+Rt[10]*Rt[10]+Rt[11]*Rt[11]);
+		for (int j=0; j<3; ++j)
+		{
+			const int j3=j+3, j6=j+6;
+			const double w=b*(Rt[9]*Rt[j]+Rt[10]*Rt[j3]+Rt[11]*Rt[j6]);
+			Rt[j]=Rt[9]*w-Rt[j];
+			Rt[j3]=Rt[10]*w-Rt[j3];
+			Rt[j6]=Rt[11]*w-Rt[j6];
+		}
+		triang2v(A,Rt,0,Q);
+		const double c1=Q[0][2], c2=Rt[6]*Q[0][0]+Rt[7]*Q[0][1]+Rt[8]*Q[0][2]+Rt[11];
+		if (c1>0 && c2>0); // Rt2 is correct
+		else // R2 is correct, t2=-t2
+		{
+			Rt[9]=-Rt[9];
+			Rt[10]=-Rt[10];
+			Rt[11]=-Rt[11];
+		}
+	}
+	
+	for (int i=0; i<NPOINTS; ++i)
+		triang2v(A,Rt,i,Q); // triangulate all scene points
+	
+	// check that the rest of scene points are in front of the first two cameras
+	// if any of them is not, then the solution is dropped
+	for (int i=1; i<NPOINTS; ++i)
+		if (Q[i][2]<0 || Rt[6]*Q[i][0]+Rt[7]*Q[i][1]+Rt[8]*Q[i][2]+Rt[11]<0) return 0;
+
+	return 1;
+}
+
+
+
+void getA(double A[NVIEWS][3][NPOINTS])
+{
+	for (int j=0; j<NVIEWS1; ++j)
+		for (int i=0; i<NPOINTS; ++i)
+		{
+			const double fac=1./A[j][2][i];
+			for (int k=0; k<3; ++k) A[j][k][i]*=fac;
+		}
+	
+	for (int i=0; i<3; ++i)
+	{
+		const double fac=1./sqrt(A[2][0][i]*A[2][0][i]+A[2][1][i]*A[2][1][i]+A[2][2][i]*A[2][2][i]);
+		for (int k=0; k<3; ++k) A[2][k][i]*=fac;
+	}
+	double fac=1./A[2][2][3];
+	for (int k=0; k<3; ++k) A[2][k][3]*=fac;
+	
+	const double m1=A[2][1][0]*A[2][2][1]-A[2][2][0]*A[2][1][1],
+		m2=A[2][0][1]*A[2][2][0]-A[2][0][0]*A[2][2][1],
+		m3=A[2][0][0]*A[2][1][1]-A[2][0][1]*A[2][1][0];
+
+	const double idet=1./(A[2][0][2]*m1+A[2][1][2]*m2+A[2][2][2]*m3);
+	// inverse of matrix
+	A[3][0][0]=(A[2][1][1]*A[2][2][2]-A[2][2][1]*A[2][1][2])*idet;
+	A[3][0][1]=(A[2][2][0]*A[2][1][2]-A[2][1][0]*A[2][2][2])*idet;
+	A[3][0][2]=m1*idet;
+	A[3][1][0]=(A[2][0][2]*A[2][2][1]-A[2][0][1]*A[2][2][2])*idet;
+	A[3][1][1]=(A[2][0][0]*A[2][2][2]-A[2][0][2]*A[2][2][0])*idet;
+	A[3][1][2]=m2*idet;
+	A[3][2][0]=(A[2][0][1]*A[2][1][2]-A[2][0][2]*A[2][1][1])*idet;
+	A[3][2][1]=(A[2][0][2]*A[2][1][0]-A[2][0][0]*A[2][1][2])*idet;
+	A[3][2][2]=m3*idet;
+
+	A[3][0][3]=2.*(A[2][0][1]*A[2][0][2]+A[2][1][1]*A[2][1][2]+A[2][2][1]*A[2][2][2]);
+	A[3][1][3]=2.*(A[2][0][0]*A[2][0][2]+A[2][1][0]*A[2][1][2]+A[2][2][0]*A[2][2][2]);
+	A[3][2][3]=2.*(A[2][0][0]*A[2][0][1]+A[2][1][0]*A[2][1][1]+A[2][2][0]*A[2][2][1]);
 }

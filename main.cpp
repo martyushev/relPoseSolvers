@@ -8,7 +8,9 @@
 #include "common.h"
 #include "math.h"
 #include "synthData.h"
+#include "p4p.h"
 #include "relpose4p3v.h"
+#include "relpose4p3v_ns.h"
 #include "stats.h"
 
 
@@ -31,7 +33,7 @@ int main()
 		
 		stats.timer.start(); // start timer
 		
-		if (!relative4p3v(data,cam_est)) continue; // run solver
+		if (!relpose4p3v(data,cam_est)) continue; // run solver
 
 		stats.totalTime+=stats.timer.stop(); // stop timer
 
