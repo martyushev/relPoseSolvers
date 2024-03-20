@@ -33,7 +33,7 @@ int main()
 		
 		stats.timer.start(); // start timer
 		
-		if (!relpose4p3v(data,cam_est)) continue; // run solver
+		if (!relpose4p3v_ns(data,cam_est)) continue; // run solver
 
 		stats.totalTime+=stats.timer.stop(); // stop timer
 
@@ -45,8 +45,8 @@ int main()
 
 	stats.printStats(); // print results
 
-	int n;
-	std::cin >> n;
+	//int n;
+	//std::cin >> n;
 
 	return 0;
 }
