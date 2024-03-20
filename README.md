@@ -1,9 +1,9 @@
 C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
 
 @article{nister2006four,
-  title={Four points in two or three calibrated views: Theory and practice},
-  author={Nist{\'e}r, David and Schaffalitzky, Frederik},
-  journal={International Journal of Computer Vision},\n
+title={Four points in two or three calibrated views: Theory and practice},
+author={Nist{\'e}r, David and Schaffalitzky, Frederik},
+  journal={International Journal of Computer Vision},
   volume={67},
   number={2},
   pages={211--231},
