@@ -3,12 +3,12 @@ C++ implementation of the 4-point 3-view algorithm for metric reconstruction fro
 @article{nister2006four,
 title={Four points in two or three calibrated views: Theory and practice},
 author={Nist{\'e}r, David and Schaffalitzky, Frederik},
-  journal={International Journal of Computer Vision},
-  volume={67},
-  number={2},
-  pages={211--231},
-  year={2006},
-  publisher={Springer}
+journal={International Journal of Computer Vision},
+volume={67},
+number={2},
+pages={211--231},
+year={2006},
+publisher={Springer}
 }
 
 
@@ -25,16 +25,16 @@ Notes:
 
 1) Setup #1 (MAXLM = 5, MAXIT = 10)
 
-	Average runtime: 0.03 ms
-	Median error: -3.02
-	Mean error: -2.52
-	Fails (error > -2): 27.2%
+	- Average runtime: 0.03 ms
+	- Median error: -3.02
+	- Mean error: -2.52
+	- Fails (error > -2): 27.2%
 
 2) Setup #2 (MAXLM = 10, MAXIT = 20)
 
-	Average runtime: 0.05 ms
-	Median error: -5.49
-	Mean error: -4.86
+	- Average runtime: 0.05 ms
+	- Median error: -5.49
+	- Mean error: -4.86
 	Fails (error > -2): 13.5%
 
 3) Setup #3 (MAXLM = 20, MAXIT = 40)
