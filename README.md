@@ -21,7 +21,7 @@ Notes:
 - error is computed as 0.5*log10(||P2 - P2gt||^2 + ||P3 - P3gt||^2)
 - MAXIT is the maximum number of iterations for the golden section method
 - MAXLM is the maximum number of local minima of the cost function
-- cost function evaluation and local minima polishing are parallelized, # of threads is 8
+- cost function evaluation and local minima polishing are parallelized, number of threads is 8
 
 1) Setup #1 (MAXLM = 5, MAXIT = 10)
 
