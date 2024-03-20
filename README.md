@@ -1,4 +1,4 @@
-A parallelized C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
+#C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
 
 @article{nister2006four,
   title={Four points in two or three calibrated views: Theory and practice},
@@ -12,7 +12,7 @@ A parallelized C++ implementation of the 4-point 3-view algorithm for metric rec
 }
 
 
-Experiments were performed on the system with Intel Core i5 CPU @ 2.3GHz and 8GB of RAM.
+Experiments were performed on the system with Intel(R) Core(TM) i5-1155G7 @ 2.5 GHz.
 
 Notes:
 - number of trials is 10^5
@@ -21,32 +21,32 @@ Notes:
 - error is computed as 0.5*log10(||P2 - P2gt||^2 + ||P3 - P3gt||^2)
 - MAXIT is the maximum number of iterations for the golden section method
 - MAXLM is the maximum number of local minima of the cost function
-- cost function evaluation and local minima polishing are parallelized
+- cost function evaluation and local minima polishing are parallelized, # of threads is 8
 
 1) Setup #1 (MAXLM = 5, MAXIT = 10)
 
-	Average runtime: 0.13 ms
+	Average runtime: 0.03 ms
 	Median error: -3.02
 	Mean error: -2.52
-	Fails (error > -2): 26.6%
+	Fails (error > -2): 27.2%
 
 2) Setup #2 (MAXLM = 10, MAXIT = 20)
 
-	Average runtime: 0.30 ms
+	Average runtime: 0.05 ms
 	Median error: -5.49
 	Mean error: -4.86
-	Fails (error > -2): 13.7%
+	Fails (error > -2): 13.5%
 
 3) Setup #3 (MAXLM = 20, MAXIT = 40)
 
-	Average runtime: 0.59 ms
+	Average runtime: 0.10 ms
 	Median error: -8.81
 	Mean error: -8.06
-	Fails (error > -2): 7.1%
+	Fails (error > -2): 7.0%
 
 4) Setup #4 (MAXLM = 50, MAXIT = 30)
 
-	Average runtime: 0.67 ms
+	Average runtime: 0.10 ms
 	Median error: -8.05
 	Mean error: -7.70
 	Fails (error > -2): 2.9%

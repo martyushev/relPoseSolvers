@@ -39,7 +39,7 @@ int main()
 
 		stats.updateStats(cam_est,cam_gt); // update statistics
 
-		exportData << stats.errNum << "\n"; // export errors to file
+		//exportData << stats.errNum << "\n"; // export errors to file
 	}
 	exportData.close();
 

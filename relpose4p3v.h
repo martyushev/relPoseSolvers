@@ -181,6 +181,16 @@ int localMinima(const auxArrays &S, Camera cam[MAXLM])
 	#pragma omp parallel for shared(n,lm,S,cam) schedule(dynamic) num_threads(NUM_THREADS)
 	for (int i=0; i<n; ++i) golden(lm[i],S,cam[i]); // polish each local minimum by golden section method
 
+	/*{ // export cost function
+	char data_out[100];
+	sprintf_s(data_out, "%scost.txt", FOLDER_OUT);
+	std::ofstream export_data(data_out, std::ios::out);
+	export_data.precision(4);
+	for (int i=0; i<2*MAXLM; ++i)
+		export_data << s[i] << "\t" << sqrt(cam1[i].Err) << "\n";
+	export_data.close();
+	}*/
+
 	return n;
 }
 
