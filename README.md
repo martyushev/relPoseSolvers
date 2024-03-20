@@ -1,4 +1,4 @@
-#C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
+C++ implementation of the 4-point 3-view algorithm for metric reconstruction from
 
 @article{nister2006four,
   title={Four points in two or three calibrated views: Theory and practice},
