@@ -15,10 +15,10 @@ struct auxArrays
 
 
 
-// transform initial data so that x[j][0]=y[j][0]=x[j][1]=0.0 for j = 0,1
-void auxArrays::trans(const double data[NVIEWS][3][NPOINTS])
+// transform initial image points so that q[j][0][0]=q[j][1][0]=q[j][0][1]=0 for j = 0,1
+void auxArrays::trans(const double q[NVIEWS][3][NPOINTS])
 {
-	iniPerm(data,A);
+	iniPerm(q,A);
 
 	for (int j=0; j<2; ++j)
 	{

@@ -262,10 +262,10 @@ int localMinima_ns(const auxArrays_ns &S, Camera cam[MAXLM])
 
 // main function
 // output is either 1 or 0 (no solution found)
-bool relpose4p3v_ns(const double data[NVIEWS][3][NPOINTS], Camera &cam_est)
+bool relpose4p3v_ns(const double q[NVIEWS][3][NPOINTS], Camera &cam_est)
 {
 	auxArrays_ns S;
-	S.trans(data);
+	S.trans(q);
 	getA(S.A);
 	S.getBG();
 

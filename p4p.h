@@ -24,7 +24,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 	p[1]=(t7-t02*r2)*A[3][1][3]+t9;
 	p[0]=r2*r2-t7;
 
-	const int nv=solveQuartic(p,v); // find all real roots of the quartic polynomial
+	const int nv=solveQuartic(p,v); // find all real roots of the polynomial
 	
 	int imin;
 	double P3[4][12];
@@ -54,7 +54,7 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 		const double det1=(A[2][0][0]*A[2][1][1]-A[2][0][1]*A[2][1][0])*A[3][2][2];
 		const double det2=w[2][2]*(w[0][0]*w[1][1]-w[0][1]*w[1][0])-w[2][1]*(w[0][0]*w[1][2]-w[0][2]*w[1][0])+w[2][0]*(w[0][1]*w[1][2]-w[0][2]*w[1][1]);
 		if ((det2>0)-(det1>0))
-		{ // triplets (Q[0]-O3, Q[1]-O3, Q[2]-O3) and (data[][0], data[][1], data[][2]) must define the same orientation
+		{ // triplets (Q[0]-O3, Q[1]-O3, Q[2]-O3) and (q[2][][0], q[2][][1], q[2][][2]) must define the same orientation
 			const double u2=t0/u1;
 			O3[0]=c0*u2+dx+Q[0][0];
 			O3[1]=c1*u2+dy+Q[0][1];
@@ -85,10 +85,10 @@ bool p4p(const double A[NVIEWS+1][3][NPOINTS], const double Q[NPOINTS][3], Camer
 		const double b0=(P3[i][0]*Q[3][0]+P3[i][1]*Q[3][1]+P3[i][2]*Q[3][2]+P3[i][9])*b2-A[2][0][3];
 		const double b1=(P3[i][3]*Q[3][0]+P3[i][4]*Q[3][1]+P3[i][5]*Q[3][2]+P3[i][10])*b2-A[2][1][3];
 		
-		const double err1=b0*b0+b1*b1;
-		if (err1<cam.Err)
+		const double err=b0*b0+b1*b1;
+		if (err<cam.Err)
 		{
-			cam.Err=err1;
+			cam.Err=err;
 			imin=i;
 		}
 	}

@@ -2,12 +2,12 @@
 #define SQRT3 1.7320508075688772935
 #define MAXIT1 50 // number of iterations for root isolating and polishing
 #define ACC 1.e-14 // root is polished to an approximate accuracy ACC
-#define DEG 6 // degree of polynomial
 
 
 
 // all real roots of a polynomial p(x) lie in (bound[0], bound[1])
 // Kioustelidis' method
+template <const int DEG>
 void bounds(const double p[DEG], double bound[2])
 {
 	double M=fabs(p[0]);
@@ -38,6 +38,7 @@ void bounds(const double p[DEG], double bound[2])
 
 
 // get data to compute the Sturm sequence for a polynomial p(x) at any point
+template <const int DEG>
 void quotients(const double p[DEG], const double dp[DEG-1], double q[DEG+1][2])
 {
 	double r_[DEG], r[DEG-1];
@@ -78,6 +79,7 @@ void quotients(const double p[DEG], const double dp[DEG-1], double q[DEG+1][2])
 
 
 // evaluate polynomial p(x) at x0
+template <const int DEG>
 double evalPoly(const double p[DEG], const double &x0)
 {
 	double s=x0+p[DEG-1];
@@ -88,6 +90,7 @@ double evalPoly(const double p[DEG], const double &x0)
 
 
 // number of sign changes in a sequence seq[]
+template <const int DEG>
 int nchanges(const double seq[DEG+1])
 {
 	int s1, s2=(seq[0]>0.)? 1:((seq[0]<0.)? -1:0), s=0;
@@ -104,6 +107,7 @@ int nchanges(const double seq[DEG+1])
 
 
 // evaluate Sturm sequence at a
+template <const int DEG>
 int evalSturmSeq(const double q[DEG+1][2], const double &a)
 {
 	double sa[DEG+1];
@@ -114,23 +118,24 @@ int evalSturmSeq(const double q[DEG+1][2], const double &a)
 	for (int i=2; i<DEG; ++i)
 		sa[i]=(q[i][0]*a+q[i][1])*sa[i-1]-sa[i-2];
     sa[DEG]=(a+q[DEG][1])*sa[DEG-1]-sa[DEG-2]; // since q[DEG][0]=1.
-	return nchanges(sa);
+	return nchanges<DEG>(sa);
 }
 
 
 
 // isolate all real roots of polynomial p(x)
+template <const int DEG>
 int isolateRoots(const double p[DEG], const double dp[DEG-1], double Isol[DEG][2])
 {
 	int nIsol=0, nTree=1, nIters=1, min=0, sTree[2*MAXIT1+1][2];
 	double Tree[2*MAXIT1+1][2], q[DEG+1][2];
 
 	// initialize the tree
-	bounds(p,Tree[0]); // all real roots of polynomial p(x) lie in (Tree[0][0], Tree[0][1])
+	bounds<DEG>(p,Tree[0]); // all real roots of polynomial p(x) lie in (Tree[0][0], Tree[0][1])
 
-	quotients(p,dp,q);
-	sTree[0][0]=evalSturmSeq(q,Tree[0][0]);
-	sTree[0][1]=evalSturmSeq(q,Tree[0][1]);
+	quotients<DEG>(p,dp,q);
+	sTree[0][0]=evalSturmSeq<DEG>(q,Tree[0][0]);
+	sTree[0][1]=evalSturmSeq<DEG>(q,Tree[0][1]);
 
 	while (nTree>min)
 	{
@@ -150,7 +155,7 @@ int isolateRoots(const double p[DEG], const double dp[DEG-1], double Isol[DEG][2
 			const double mid=0.5*(a+b);
 			// add intervals (a, mid] and (mid, b] to Isol
 			Tree[nTree][1]=Tree[nTree1][0]=mid;
-			sTree[nTree][1]=sTree[nTree1][0]=evalSturmSeq(q,mid);
+			sTree[nTree][1]=sTree[nTree1][0]=evalSturmSeq<DEG>(q,mid);
 			Tree[nTree][0]=a;
 			Tree[nTree1][1]=b;
 			sTree[nTree][0]=sa;
@@ -175,9 +180,10 @@ int isolateRoots(const double p[DEG], const double dp[DEG-1], double Isol[DEG][2
 // polish the root of a polynomial p(x) known to lie between xl and x2, Ridders' method
 // this function adapted from "Numerical recipes in C" by Press et al.
 // the output is either 1 or 0 (no solution found)
+template <const int DEG>
 bool polishRoots(const double p[DEG], const double &x1, const double &x2, double &ans)
 {
-	double fl=evalPoly(p,x1), fh=evalPoly(p,x2);
+	double fl=evalPoly<DEG>(p,x1), fh=evalPoly<DEG>(p,x2);
 	if (!fh)
     {
         ans=x2;
@@ -190,12 +196,12 @@ bool polishRoots(const double p[DEG], const double &x1, const double &x2, double
 		ans=0.5*(x1+x2);
 		for (int j=1; j<=MAXIT1; ++j)
 		{
-			const double xm=0.5*(xl+xh), fm=evalPoly(p,xm), s=sqrt(fm*fm-fl*fh);
+			const double xm=0.5*(xl+xh), fm=evalPoly<DEG>(p,xm), s=sqrt(fm*fm-fl*fh);
 			if (!s) return 1;
 			const double xnew=(fl<fh)? xm+(xl-xm)*fm/s:xm+(xm-xl)*fm/s;
 			if (fabs(xnew-ans)<=ACC) return 1;
 			ans=xnew;
-			const double fnew=evalPoly(p,ans);
+			const double fnew=evalPoly<DEG>(p,ans);
 			if (!fnew) return 1;
 			if (fnew>=0? (fm<0):(fm>0))
 			{
@@ -226,7 +232,8 @@ bool polishRoots(const double p[DEG], const double &x1, const double &x2, double
 
 // solve for real roots of a square-free polynomial p(x) of degree DEG
 // output is the number of roots found
-// for polynomials of degree 2,3,4, use closed-form solvers for efficiency
+// use closed-form solvers for polynomials of degree 2,3,4
+template <const int DEG>
 int solvePoly(const double p[DEG+1], double x[DEG])
 {
 	// copy and normalize the input polynomial p(x) and its derivative dp(x)
@@ -240,12 +247,12 @@ int solvePoly(const double p[DEG+1], double x[DEG])
 	}	
 
 	double Isol[DEG][2];
-	const int nIsol=isolateRoots(p1,dp1,Isol); // isolate all real roots of p(x)
+	const int nIsol=isolateRoots<DEG>(p1,dp1,Isol); // isolate all real roots of p(x)
 
 	int nr=0;
 	for (int i=0; i<nIsol; ++i)
 	{ // find isolated real root of p(x)
-		if (!polishRoots(p1,Isol[i][0],Isol[i][1],x[nr])) continue;
+		if (!polishRoots<DEG>(p1,Isol[i][0],Isol[i][1],x[nr])) continue;
 		++nr;
 	}
 
@@ -272,7 +279,6 @@ int solveQuadratic(const double p[3], double x[2])
 		x[0]=-0.5*p[1]/p[2];
 		return 1;
 	}
-
 }
 
 
@@ -380,4 +386,3 @@ int solveQuartic(const double a[5], double x[4])
 #undef SQRT3
 #undef MAXIT1
 #undef ACC
-#undef DEG

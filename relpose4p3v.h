@@ -75,7 +75,7 @@ void costFunction(const double &s, const auxArrays &S, Camera &cam)
 {
 	double p1[7], w[6];
 	get_p1(S.p,s,p1);
-	const int nw=solvePoly(p1,w); // find all real roots of the sextic polynomial
+	const int nw=solvePoly<6>(p1,w); // find all real roots of the sextic polynomial
 	
 	int kmin;
 	Camera cam1[6];
@@ -198,10 +198,10 @@ int localMinima(const auxArrays &S, Camera cam[MAXLM])
 
 // main function
 // output is either 1 or 0 (no solution found)
-bool relpose4p3v(const double data[NVIEWS][3][NPOINTS], Camera &cam_est)
+bool relpose4p3v(const double q[NVIEWS][3][NPOINTS], Camera &cam_est)
 {
 	auxArrays S;
-	S.trans(data);
+	S.trans(q);
 	getA(S.A);
 	S.getB();
 	S.getF();

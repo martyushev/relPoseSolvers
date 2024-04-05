@@ -26,14 +26,14 @@ int main()
 
 	for (int i=1; i<=NTRIALS; ++i)
 	{
-		double data[NVIEWS][3][NPOINTS];
+		double q[NVIEWS][3][NPOINTS];
 		Camera cam_gt, cam_est;
 		
-		synthData(data,cam_gt); // generate synthetic data and ground truth cameras
+		synthData(q,cam_gt); // generate synthetic image points and ground truth cameras
 		
 		stats.timer.start(); // start timer
 		
-		if (!relpose4p3v_ns(data,cam_est)) continue; // run solver
+		if (!relpose4p3v_ns(q,cam_est)) continue; // run solver
 
 		stats.totalTime+=stats.timer.stop(); // stop timer
 
@@ -44,9 +44,6 @@ int main()
 	exportData.close();
 
 	stats.printStats(); // print results
-
-	//int n;
-	//std::cin >> n;
 
 	return 0;
 }

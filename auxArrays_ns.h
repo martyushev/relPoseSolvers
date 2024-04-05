@@ -12,9 +12,9 @@ struct auxArrays_ns
 
 
 
-void auxArrays_ns::trans(const double data[NVIEWS][3][NPOINTS])
+void auxArrays_ns::trans(const double q[NVIEWS][3][NPOINTS])
 {
-	iniPerm(data,A);
+	iniPerm(q,A);
 }
 
 
@@ -22,43 +22,40 @@ void auxArrays_ns::trans(const double data[NVIEWS][3][NPOINTS])
 // compute conics B and G
 void auxArrays_ns::getBG()
 {
-	double C[9][2*NPOINTS], S[9][2*NPOINTS], Q[9][2];
+	double C[2*NPOINTS][9], S[NPOINTS][6], H[1][9];
 	for (int i=0; i<NPOINTS; ++i)
 	{
-		const int i2=i*2, i3=i2+1;
-		C[0][i2]=C[1][i2]=C[2][i2]=0.;
-		C[3][i2]=-A[0][2][i]*A[1][0][i];
-		C[4][i2]=-A[0][2][i]*A[1][1][i];
-		C[5][i2]=-A[0][2][i]*A[1][2][i];
-		C[6][i2]=A[0][1][i]*A[1][0][i];
-		C[7][i2]=A[0][1][i]*A[1][1][i];
-		C[8][i2]=A[0][1][i]*A[1][2][i];
-		C[3][i3]=C[4][i3]=C[5][i3]=0.;
-		C[0][i3]=-C[3][i2];
-		C[1][i3]=-C[4][i2];
-		C[2][i3]=-C[5][i2];
-		C[6][i3]=-A[0][0][i]*A[1][0][i];
-		C[7][i3]=-A[0][0][i]*A[1][1][i];
-		C[8][i3]=-A[0][0][i]*A[1][2][i];
+		const int i2=2*i, i3=i2+1;
+		C[i2][0]=C[i2][1]=C[i2][2]=0.;
+		C[i2][3]=-A[0][2][i]*A[1][0][i];
+		C[i2][4]=-A[0][2][i]*A[1][1][i];
+		C[i2][5]=-A[0][2][i]*A[1][2][i];
+		C[i2][6]=A[0][1][i]*A[1][0][i];
+		C[i2][7]=A[0][1][i]*A[1][1][i];
+		C[i2][8]=A[0][1][i]*A[1][2][i];
+		C[i3][3]=C[i3][4]=C[i3][5]=0.;
+		C[i3][0]=-C[i2][3];
+		C[i3][1]=-C[i2][4];
+		C[i3][2]=-C[i2][5];
+		C[i3][6]=-A[0][0][i]*A[1][0][i];
+		C[i3][7]=-A[0][0][i]*A[1][1][i];
+		C[i3][8]=-A[0][0][i]*A[1][2][i];
 
-		S[0][i]=A[0][0][i]*A[0][0][i];
-		S[1][i]=2.*A[0][1][i]*A[0][0][i];
-		S[2][i]=2.*A[0][2][i]*A[0][0][i];
-		S[3][i]=A[0][1][i]*A[0][1][i];
-		S[4][i]=2.*A[0][2][i]*A[0][1][i];
-		S[5][i]=A[0][2][i]*A[0][2][i];
+		S[i][0]=A[0][0][i]*A[0][0][i];
+		S[i][1]=2.*A[0][1][i]*A[0][0][i];
+		S[i][2]=2.*A[0][2][i]*A[0][0][i];
+		S[i][3]=A[0][1][i]*A[0][1][i];
+		S[i][4]=2.*A[0][2][i]*A[0][1][i];
+		S[i][5]=A[0][2][i]*A[0][2][i];
 	}
 	
-	nullQR(C,Q,9,8);
-	double H[9];
-	for (int i=0; i<9; ++i) H[i]=Q[i][0];
-	transpose(H,Ht);
+	nullQR<2*NPOINTS,9>(C,H);
+	transpose(H[0],Ht);
 
-	nullQR(S,Q,6,4);
+	nullQR<NPOINTS,6>(S,B);
 	double B1[2][9];
 	for (int j=0; j<2; ++j)
 	{
-		for (int i=0; i<6; ++i) B[j][i]=Q[i][j];
 		B1[j][0]=B[j][0];
 		B1[j][1]=B[j][1];
 		B1[j][2]=B[j][2];
@@ -71,7 +68,7 @@ void auxArrays_ns::getBG()
 	}
 
 	double HHt[9], D[9];
-	mult(H,Ht,HHt);
+	mult(H[0],Ht,HHt);
 	adjoint(HHt,D,1);
 
 	double BD[2][9], K[2][9], U1[2][9], U2[2][9], L[2][9], Lt[2][9], t1[2], t2[2];

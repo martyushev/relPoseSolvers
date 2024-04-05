@@ -12,27 +12,28 @@ void cameraCenters(double O[NVIEWS1][3])
 	// cameras' centers, 1st camera center is at the origin
 	double theta=rnd(0,PI), phi=rnd(-PI,PI), b=1.; // b is baseline length
 
-	if (!MOTION)
+	if (MOTION==1) // sideway motion
+	{
+		O[0][0]=sin(phi)*b;
+		O[0][1]=cos(phi)*b;
+		O[0][2]=O[1][2]=0.;
+		for (int k=0; k<2; ++k) O[1][k]=0.5*O[0][k]+b*rnd(-0.1,0.1);
+	}
+	else if (MOTION==2) // forward motion
+	{
+		O[0][0]=0.;
+		O[0][1]=0.;
+		O[0][2]=b;
+		for (int k=0; k<3; ++k) O[1][k]=0.5*O[0][k];
+	}
+	else // (MOTION==0 || MOTION==3)
 	{
 		const double t=sin(theta)*b;
 		O[0][0]=sin(phi)*t;
 		O[0][1]=cos(phi)*t;
 		O[0][2]=cos(theta)*b;
+		for (int k=0; k<3; ++k) O[1][k]=0.5*O[0][k]+b*rnd(-0.1,0.1);
 	}
-	else if (MOTION==1) // sideway motion
-	{
-		O[0][0]=sin(phi)*b;
-		O[0][1]=cos(phi)*b;
-		O[0][2]=0.;
-	}
-	else // forward motion
-	{
-		O[0][0]=0.;
-		O[0][1]=0.;
-		O[0][2]=b;
-	}
-
-	for (int k=0; k<3; ++k) O[1][k]=0.5*O[0][k]+(MOTION? 0.:b*rnd(-0.1,0.1));
 }
 
 
@@ -40,10 +41,10 @@ void cameraCenters(double O[NVIEWS1][3])
 // generate camera matrices
 void cameraMatrices(const double O[NVIEWS1][3], double Rt[NVIEWS1][12])
 {
+	const double max_ang=(MOTION==3)? 0.:PI/8.; // maximum value for Euler angles
 	for (int j=0; j<NVIEWS1; ++j)
 	{
 		// uniformly distributed Euler angles
-		const double max_ang=PI/8.; // maximum value for Euler angles
 		const double phi=rnd(-max_ang,max_ang), theta=rnd(0.,2.*max_ang), psi=rnd(-max_ang,max_ang);
 		const double cphi=cos(phi), sphi=sin(phi), ctheta=cos(theta), stheta=sin(theta), cpsi=cos(psi), spsi=sin(psi);
 
@@ -61,12 +62,12 @@ void cameraMatrices(const double O[NVIEWS1][3], double Rt[NVIEWS1][12])
 	}
 
 	// normalize translation vectors so that ||t2||=1
-	const double scale=1./sqrt(Rt[0][9]*Rt[0][9]+Rt[0][10]*Rt[0][10]+Rt[0][11]*Rt[0][11]);
+	const double fac=1./sqrt(Rt[0][9]*Rt[0][9]+Rt[0][10]*Rt[0][10]+Rt[0][11]*Rt[0][11]);
 	for (int j=0; j<NVIEWS1; ++j)
 	{
-		Rt[j][9]*=scale;
-		Rt[j][10]*=scale;
-		Rt[j][11]*=scale;
+		Rt[j][9]*=fac;
+		Rt[j][10]*=fac;
+		Rt[j][11]*=fac;
 	}
 }
 
@@ -122,56 +123,15 @@ void scenePoints(double Q[NPOINTS][3], const int &k)
 
 
 
-
-void degenConfig(double Q[NPOINTS][3], const int &k)
-{
-	if (k==0)
-	{ // 3 points on a line
-		const double a=rnd(0.2,0.8);
-		Q[3][0]=Q[1][0]+a*(Q[2][0]-Q[1][0]);
-		Q[3][1]=Q[1][1]+a*(Q[2][1]-Q[1][1]);
-		Q[3][2]=Q[1][2]+a*(Q[2][2]-Q[1][2]);
-	}
-	else if (k==1)
-	{ // points on a circle
-		const double d=10, r=8;
-		for (int i=0; i<NPOINTS; ++i)
-		{
-			double phi=rnd(0,2*PI);
-			Q[i][0]=r*cos(phi);
-			Q[i][1]=r*sin(phi);
-			Q[i][2]=d;
-		}
-	}
-	else if (k==2)
-	{ // points at vertices of a rectangle
-		const double d=10, w=8, h=0.8*w;
-		Q[0][0]=-w;
-		Q[0][1]=-h;
-		Q[0][2]=d;
-		Q[1][0]=-w;
-		Q[1][1]=h;
-		Q[1][2]=d;
-		Q[2][0]=w;
-		Q[2][1]=-h;
-		Q[2][2]=d;
-		Q[3][0]=w;
-		Q[3][1]=h;
-		Q[3][2]=d;
-	}
-}
-
-
-
 // map scene points onto image planes
-void projectPoints(const double P[NVIEWS1][12], const double Q[NPOINTS][3], double data[NVIEWS][3][NPOINTS])
+void projectPoints(const double P[NVIEWS1][12], const double Q[NPOINTS][3], double q[NVIEWS][3][NPOINTS])
 {
 	for (int i=0; i<NPOINTS; ++i)
 	{
 		const double fac=1./Q[i][2];
-		data[0][0][i]=Q[i][0]*fac;
-		data[0][1][i]=Q[i][1]*fac;
-		data[0][2][i]=1.;
+		q[0][0][i]=Q[i][0]*fac;
+		q[0][1][i]=Q[i][1]*fac;
+		q[0][2][i]=1.;
 		for (int j=0; j<NVIEWS1; ++j)
 		{
 			double PjQ[3];
@@ -180,9 +140,9 @@ void projectPoints(const double P[NVIEWS1][12], const double Q[NPOINTS][3], doub
 			PjQ[2]=P[j][6]*Q[i][0]+P[j][7]*Q[i][1]+P[j][8]*Q[i][2]+P[j][11];
 			const double fac=1./PjQ[2];
 			const int j1=j+1;
-			data[j1][0][i]=PjQ[0]*fac;
-			data[j1][1][i]=PjQ[1]*fac;
-			data[j1][2][i]=1.;
+			q[j1][0][i]=PjQ[0]*fac;
+			q[j1][1][i]=PjQ[1]*fac;
+			q[j1][2][i]=1.;
 		}
 	}
 }
@@ -190,27 +150,27 @@ void projectPoints(const double P[NVIEWS1][12], const double Q[NPOINTS][3], doub
 
 
 // add normally distributed image noise
-void imageNoise(const double sigma, double data[NVIEWS][3][NPOINTS])
+void imageNoise(const double sigma, double q[NVIEWS][3][NPOINTS])
 {
 	for (int i=0; i<NPOINTS; ++i)
 		for (int j=1; j<NVIEWS; ++j)
 		{
 			double noise[2];
 			rndn(0.,sigma,noise); // generate normally distributed image noise
-			data[j][0][i]+=noise[0];
-			data[j][1][i]+=noise[1];
+			q[j][0][i]+=noise[0];
+			q[j][1][i]+=noise[1];
 		}
 }
 
 
 
-// generate synthetic data and ground truth camera matrices
-void synthData(double data[NVIEWS][3][NPOINTS], Camera &cam)
+// generate synthetic image points and ground truth camera matrices
+void synthData(double q[NVIEWS][3][NPOINTS], Camera &cam)
 {
 	double O[NVIEWS1][3], Q[NPOINTS][3], pixel=1.e-4;
 	cameraCenters(O);
 	cameraMatrices(O,cam.Rt);
 	scenePoints(Q,0);
-	projectPoints(cam.Rt,Q,data);
-	imageNoise(pixel*NOISE, data);
+	projectPoints(cam.Rt,Q,q);
+	imageNoise(pixel*NOISE,q);
 }

@@ -26,7 +26,7 @@ void rndn(const double a, const double sigma, double x[2])
 
 
 
-// multiply two 3x3 matrices C=A*B
+// multiply two 3-by-3 matrices C=A*B
 void mult(const double A[9], const double B[9], double C[9])
 {
 	for (int i=0; i<3; ++i)
@@ -39,70 +39,71 @@ void mult(const double A[9], const double B[9], double C[9])
 
 
 
-// basis of null space of mxn matrix A using specifically tailored QR factorization
-// result is n-m n-vectors Q
+// find the basis of the null space of M-by-N (M < N) matrix A using specifically tailored QR factorization
+// result is N-M N-vectors Q
 // note that matrix A changes during the computation
-void nullQR(double A[9][2*NPOINTS], double Q[9][2], const int n, const int m)
+template <const int M, const int N>
+void nullQR(double A[M][N], double Q[N-M][N])
 {
-	const int nm=n-m, m1=m-1;
+	const int NM=N-M, M1=M-1;
 
-	// Hauseholder vectors
-	for (int j=0; j<m; ++j)
+	// construct Hauseholder vectors
+	for (int j=0; j<M; ++j)
 	{
 		double t=0;
-		for (int i=j+1; i<n; ++i) t+=A[i][j]*A[i][j];
+		for (int i=j+1; i<N; ++i) t+=A[j][i]*A[j][i];
 		double mu=sqrt(A[j][j]*A[j][j]+t);
 		mu=(A[j][j]<0)? 1./(A[j][j]-mu):1./(A[j][j]+mu);
 
-		for (int i=j+1; i<n; ++i) A[i][j]*=mu;
+		for (int i=j+1; i<N; ++i) A[j][i]*=mu;
 
 		double beta=-2./(1.+t*(mu*mu));
-		for (int k=j+1; k<m; ++k)
+		for (int k=j+1; k<M; ++k)
 		{
-			double w=A[j][k];
-			for (int i=j+1; i<n; ++i) w+=A[i][k]*A[i][j];
+			double w=A[k][j];
+			for (int i=j+1; i<N; ++i) w+=A[k][i]*A[j][i];
 			w*=beta;
-			for (int i=j+1; i<n; ++i) A[i][k]+=A[i][j]*w;
+			for (int i=j+1; i<N; ++i) A[k][i]+=A[j][i]*w;
 		}
 	}
 
-	// multiply m Householder matrices, inverse order is more efficient
-	// we only need last n-m columns of the resulting matrix
-	for (int k=0; k<m1; ++k) memset(Q[k],0,sizeof(double)*m1);
+	// multiply M Householder matrices, inverse order is more efficient
+	// we only need last N-M columns of the resulting matrix
+	for (int i=0; i<NM; ++i) memset(Q[i],0,sizeof(double)*M1);
 	
-	// start from the mth matrix
-	double beta=1.;
-	for (int i=m; i<n; ++i) beta+=A[i][m1]*A[i][m1];
+	// start from the Mth matrix
+	double beta=1;
+	for (int i=M; i<N; ++i) beta+=A[M1][i]*A[M1][i];
 
 	beta=-2./beta;
-	for (int k=0; k<nm; ++k)
+	for (int k=0; k<NM; ++k)
 	{
-		Q[m1][k]=A[k+m][m1]*beta;
-		for (int i=m; i<n; ++i)
-			Q[i][k]=(k==i-m)? 1.+A[i][m1]*Q[m1][k]:A[i][m1]*Q[m1][k];
+		Q[k][M1]=A[M1][k+M]*beta;
+		for (int i=M; i<N; ++i)
+			Q[k][i]=(k==i-M)? 1.+A[M1][i]*Q[k][M1]:A[M1][i]*Q[k][M1];
 	}
 	
-	// multiply by the remaining m-1 matrices
-	for (int j=m1-1; j>=0; --j)
+	// multiply by the remaining M-1 matrices
+	for (int j=M1-1; j>=0; --j)
 	{
-		double beta=1.;
-		for (int i=j+1; i<n; ++i) beta+=A[i][j]*A[i][j];
+		double beta=1;
+		for (int i=j+1; i<N; ++i) beta+=A[j][i]*A[j][i];
 		beta=-2./beta;
-		for (int k=0; k<nm; ++k)
+		for (int k=0; k<NM; ++k)
 		{
-			double w=Q[j][k];
-			for (int i=j+1; i<n; ++i) w+=Q[i][k]*A[i][j];
+			double w=Q[k][j];
+			for (int i=j+1; i<N; ++i) w+=Q[k][i]*A[j][i];
 			w*=beta;
-			Q[j][k]+=w;
-			for (int i=j+1; i<n; ++i) Q[i][k]+=A[i][j]*w;
+			Q[k][j]+=w;
+			for (int i=j+1; i<N; ++i) Q[k][i]+=A[j][i]*w;
 		}
 	}
 }
 
 
 
-// compute adjoint to 3x3 matrix A, i.e. det(A) A^{-1}
-void adjoint(const double A[9], double B[9], bool sym)
+// compute adjoint to 3-by-3 matrix A, i.e. det(A) A^{-1}
+void adjoint(const double A[9], double B[9], const bool sym)
 {
 	B[0]=A[4]*A[8]-A[5]*A[7];
 	B[1]=-A[1]*A[8]+A[2]*A[7];
@@ -127,7 +128,7 @@ void adjoint(const double A[9], double B[9], bool sym)
 
 
 
-// transpose of 3x3 matrix A
+// transpose of 3-by-3 matrix A
 void transpose(const double A[9], double B[9])
 {
 	B[0]=A[0];
@@ -149,19 +150,19 @@ inline double getVol(const double A[3][NPOINTS], const int ind[NPOINTS])
 		m2=A[0][ind[1]]*A[2][ind[0]]-A[0][ind[0]]*A[2][ind[1]],
 		m3=A[0][ind[0]]*A[1][ind[1]]-A[0][ind[1]]*A[1][ind[0]];
 	
-	return A[0][ind[2]]*m1+A[1][ind[2]]*m2+A[2][ind[2]]*m3;
+	return fabs(A[0][ind[2]]*m1+A[1][ind[2]]*m2+A[2][ind[2]]*m3);
 }
 
 
 
 // permute image points to improve numerics
-inline void iniPerm(const double data[NVIEWS][3][NPOINTS], double A[NVIEWS+1][3][NPOINTS])
+inline void iniPerm(const double q[NVIEWS][3][NPOINTS], double A[NVIEWS+1][3][NPOINTS])
 {
 	int m=0, ind[4][NPOINTS]={{2,3,1,0}, {2,0,3,1}, {0,1,3,2}, {2,1,0,3}};
-	double maxVol=fabs(getVol(data[0],ind[0]));
+	double maxVol=getVol(q[0],ind[0]);
 	for (int i=1; i<4; ++i)
 	{
-		const double vol=fabs(getVol(data[0],ind[i]));
+		const double vol=getVol(q[0],ind[i]);
 		if (vol<maxVol)
 		{
 			m=i;
@@ -172,7 +173,7 @@ inline void iniPerm(const double data[NVIEWS][3][NPOINTS], double A[NVIEWS+1][3]
 	for (int j=0; j<NVIEWS; ++j)
 		for (int i=0; i<NPOINTS; ++i)
 			for (int k=0; k<3; ++k)
-				A[j][k][i]=data[j][k][ind[m][i]];
+				A[j][k][i]=q[j][k][ind[m][i]];
 }
 
 
