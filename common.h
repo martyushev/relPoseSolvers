@@ -1,5 +1,4 @@
 #define NVIEWS 3 // number of views
-#define NVIEWS1 (NVIEWS-1)
 #define NPOINTS 4 // number of points
 #define MAXIT 30 // number of iterations for golden section search
 #define MAXLM 50 // max number of local minima (> 1), number of cost function evaluations is 2*MAXLM

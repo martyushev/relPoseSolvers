@@ -1,42 +1,43 @@
 struct auxArrays
 {
-	double A[NVIEWS+1][3][NPOINTS];
+	double q[NVIEWS][NPOINTS][3];
 	double h[2][5];
+	double K[18];
 	double B[9][10];
 	double F[9][9];
 	double p[22];
 
-	void trans(const double [NVIEWS][3][NPOINTS]);
+	void trans(const double [NVIEWS][NPOINTS][3]);
 	void getB();
 	void getF();
 	void decicPoly();
-	void itrans(double [NVIEWS1][12]);
+	void itrans(double [NVIEWS][12]);
 };
 
 
 
-// transform initial image points so that q[j][0][0]=q[j][1][0]=q[j][0][1]=0 for j = 0,1
-void auxArrays::trans(const double q[NVIEWS][3][NPOINTS])
+// transform initial image points so that q[j][0][0]=q[j][0][1]=q[j][1][0]=0 for j = 0,1
+void auxArrays::trans(const double q0[NVIEWS][NPOINTS][3])
 {
-	iniPerm(q,A);
+	iniPerm(q0,q);
 
 	for (int j=0; j<2; ++j)
 	{
 		// 1st Householder vector
-		h[j][0]=A[j][0][0];
-		h[j][1]=A[j][1][0];
+		h[j][0]=q[j][0][0];
+		h[j][1]=q[j][0][1];
 		double t=h[j][0]*h[j][0]+h[j][1]*h[j][1];
-		h[j][2]=(A[j][2][0]>0)? A[j][2][0]-sqrt(t+A[j][2][0]*A[j][2][0]):A[j][2][0]+sqrt(t+A[j][2][0]*A[j][2][0]);
+		h[j][2]=(q[j][0][2]>0)? q[j][0][2]-sqrt(t+q[j][0][2]*q[j][0][2]):q[j][0][2]+sqrt(t+q[j][0][2]*q[j][0][2]);
 		double beta=2./(t+h[j][2]*h[j][2]);
-		double w=beta*(A[j][0][0]*h[j][0]+A[j][1][0]*h[j][1]+A[j][2][0]*h[j][2]);
-		A[j][0][0]=A[j][1][0]=0.;
-		A[j][2][0]-=h[j][2]*w;
+		double w=beta*(q[j][0][0]*h[j][0]+q[j][0][1]*h[j][1]+q[j][0][2]*h[j][2]);
+		q[j][0][0]=q[j][0][1]=0;
+		q[j][0][2]-=h[j][2]*w;
 		for (int k=1; k<NPOINTS; ++k)
 		{
-			const double w=beta*(A[j][0][k]*h[j][0]+A[j][1][k]*h[j][1]+A[j][2][k]*h[j][2]);
-			A[j][0][k]=h[j][0]*w-A[j][0][k];
-			A[j][1][k]=h[j][1]*w-A[j][1][k];
-			A[j][2][k]-=h[j][2]*w;
+			const double w=beta*(q[j][k][0]*h[j][0]+q[j][k][1]*h[j][1]+q[j][k][2]*h[j][2]);
+			q[j][k][0]=h[j][0]*w-q[j][k][0];
+			q[j][k][1]=h[j][1]*w-q[j][k][1];
+			q[j][k][2]-=h[j][2]*w;
 		}
 		double fac=sqrt(beta);
 		h[j][0]*=fac;
@@ -44,23 +45,24 @@ void auxArrays::trans(const double q[NVIEWS][3][NPOINTS])
 		h[j][2]*=fac;
 
 		// 2nd Householder vector
-		h[j][3]=A[j][0][1];
+		h[j][3]=q[j][1][0];
 		t=h[j][3]*h[j][3];
-		h[j][4]=(A[j][1][1]>0)? A[j][1][1]+sqrt(t+A[j][1][1]*A[j][1][1]):A[j][1][1]-sqrt(t+A[j][1][1]*A[j][1][1]);
+		h[j][4]=(q[j][1][1]>0)? q[j][1][1]+sqrt(t+q[j][1][1]*q[j][1][1]):q[j][1][1]-sqrt(t+q[j][1][1]*q[j][1][1]);
 		beta=2./(t+h[j][4]*h[j][4]);
-		w=beta*(A[j][0][1]*h[j][3]+A[j][1][1]*h[j][4]);
-		A[j][0][1]=0.;
-		A[j][1][1]=h[j][4]*w-A[j][1][1];
+		w=beta*(q[j][1][0]*h[j][3]+q[j][1][1]*h[j][4]);
+		q[j][1][0]=0;
+		q[j][1][1]=h[j][4]*w-q[j][1][1];
 		for (int k=2; k<NPOINTS; ++k)
 		{
-			const double w=beta*(A[j][0][k]*h[j][3]+A[j][1][k]*h[j][4]);
-			A[j][0][k]=h[j][3]*w-A[j][0][k];
-			A[j][1][k]=h[j][4]*w-A[j][1][k];
+			const double w=beta*(q[j][k][0]*h[j][3]+q[j][k][1]*h[j][4]);
+			q[j][k][0]=h[j][3]*w-q[j][k][0];
+			q[j][k][1]=h[j][4]*w-q[j][k][1];
 		}
 		fac=sqrt(beta);
 		h[j][3]*=fac;
 		h[j][4]*=fac;
 	}
+	getK(q,K);
 }
 
 
@@ -69,8 +71,8 @@ void auxArrays::trans(const double q[NVIEWS][3][NPOINTS])
 void auxArrays::getB()
 {
 	// first row of matrix B, undefined entries are zeroes
-	const double y1z2=A[0][1][1]*A[1][2][1], z1y2=A[0][2][1]*A[1][1][1];
-	const double dz2=2.*A[1][2][1], dy2=2.*A[1][1][1], dy1y2=dy2*A[0][1][1], dz1z2=dz2*A[0][2][1];
+	const double y1z2=q[0][1][1]*q[1][1][2], z1y2=q[0][1][2]*q[1][1][1];
+	const double dz2=2.*q[1][1][2], dy2=2.*q[1][1][1], dy1y2=dy2*q[0][1][1], dz1z2=dz2*q[0][1][2];
 	B[0][0]=z1y2-y1z2;
 	B[0][3]=y1z2+z1y2;
 	B[0][4]=dz1z2-dy1y2;
@@ -78,20 +80,20 @@ void auxArrays::getB()
 	B[0][6]=dy1y2+dz1z2;
 	B[0][9]=-B[0][0];
 
-	B[1][1]=B[1][8]=-dz2*A[0][1][1];
-	B[1][2]=-dz2*A[0][2][1];
+	B[1][1]=B[1][8]=-dz2*q[0][1][1];
+	B[1][2]=-dz2*q[0][1][2];
 	B[1][7]=-B[1][2];
 
-	B[2][1]=B[2][8]=dy2*A[0][1][1];
-	B[2][2]=dy2*A[0][2][1];
+	B[2][1]=B[2][8]=dy2*q[0][1][1];
+	B[2][2]=dy2*q[0][1][2];
 	B[2][7]=-B[2][2];
 
 	for (int i=2; i<NPOINTS; ++i)
 	{ // last two rows of matrix B
 		const int i0=3*(i-1), i1=i0+1, i2=i0+2;
-		const double dx1x2=2.*A[0][0][i]*A[1][0][i], x1y2=A[0][0][i]*A[1][1][i], x1z2=A[0][0][i]*A[1][2][i];
-		const double y1x2=A[0][1][i]*A[1][0][i], dy1y2=2.*A[0][1][i]*A[1][1][i], y1z2=A[0][1][i]*A[1][2][i];
-		const double z1x2=A[0][2][i]*A[1][0][i], z1y2=A[0][2][i]*A[1][1][i], dz1z2=2.*A[0][2][i]*A[1][2][i];
+		const double dx1x2=2.*q[0][i][0]*q[1][i][0], x1y2=q[0][i][0]*q[1][i][1], x1z2=q[0][i][0]*q[1][i][2];
+		const double y1x2=q[0][i][1]*q[1][i][0], dy1y2=2.*q[0][i][1]*q[1][i][1], y1z2=q[0][i][1]*q[1][i][2];
+		const double z1x2=q[0][i][2]*q[1][i][0], z1y2=q[0][i][2]*q[1][i][1], dz1z2=2.*q[0][i][2]*q[1][i][2];
 		B[i0][0]=z1y2-y1z2;
 		B[i0][1]=2.*x1z2;
 		B[i0][2]=B[i0][7]=-2.*x1y2;
@@ -190,7 +192,7 @@ void auxArrays::getF()
 // decic polynomial in 2 variables, it has 43 terms, but due to the symmetry we only need half of them
 void auxArrays::decicPoly()
 {
-	double M[3][19]; // 2x2 minors, undefined entries are not required
+	double M[3][19]; // 2-by-2 minors, undefined entries are not required
 	// X[0] = (w^3, sw^3, s^2w^3, s^3w^3, w^2, sw^2, s^2w^2, s^3w^2, s^4w^2, sw, s^2w, s^3w, s^4w, s^5w, s^2, s^3, s^4, s^5)
 	M[0][0]=F[0][6]*F[4][5]-F[1][5]*F[3][6];
 	M[0][1]=F[0][4]*F[4][5]+F[0][6]*F[4][2]-F[1][2]*F[3][6]-F[1][5]*F[3][4];
@@ -272,24 +274,24 @@ void auxArrays::decicPoly()
 
 
 // inverse transform of camera matrices
-void auxArrays::itrans(double Rt[NVIEWS1][12])
+void auxArrays::itrans(double Rt[NVIEWS][12])
 {
-	const double g[4]={h[1][0]*Rt[0][0]+h[1][1]*Rt[0][3]+h[1][2]*Rt[0][6], h[1][0]*Rt[0][1]+h[1][1]*Rt[0][4]+h[1][2]*Rt[0][7], h[1][0]*Rt[0][2]+h[1][1]*Rt[0][5]+h[1][2]*Rt[0][8],	h[1][0]*Rt[0][9]+h[1][1]*Rt[0][10]+h[1][2]*Rt[0][11]};
-	const double f[4]={h[1][3]*Rt[0][0]+h[1][4]*Rt[0][3], h[1][3]*Rt[0][1]+h[1][4]*Rt[0][4], h[1][3]*Rt[0][2]+h[1][4]*Rt[0][5], h[1][3]*Rt[0][9]+h[1][4]*Rt[0][10]};
+	const double g[4]={h[1][0]*Rt[1][0]+h[1][1]*Rt[1][3]+h[1][2]*Rt[1][6], h[1][0]*Rt[1][1]+h[1][1]*Rt[1][4]+h[1][2]*Rt[1][7], h[1][0]*Rt[1][2]+h[1][1]*Rt[1][5]+h[1][2]*Rt[1][8],	h[1][0]*Rt[1][9]+h[1][1]*Rt[1][10]+h[1][2]*Rt[1][11]};
+	const double f[4]={h[1][3]*Rt[1][0]+h[1][4]*Rt[1][3], h[1][3]*Rt[1][1]+h[1][4]*Rt[1][4], h[1][3]*Rt[1][2]+h[1][4]*Rt[1][5], h[1][3]*Rt[1][9]+h[1][4]*Rt[1][10]};
 	const double d1=h[1][0]*h[1][3]+h[1][1]*h[1][4], t0=d1*h[1][0]-h[1][3], t1=d1*h[1][1]-h[1][4], t2=d1*h[1][2];
 	
 	for (int i=0; i<3; ++i)
 	{
-		Rt[0][i]-=h[1][0]*g[i]-t0*f[i];
-		Rt[0][i+3]-=h[1][1]*g[i]-t1*f[i];
-		Rt[0][i+6]-=h[1][2]*g[i]-t2*f[i];
+		Rt[1][i]-=h[1][0]*g[i]-t0*f[i];
+		Rt[1][i+3]-=h[1][1]*g[i]-t1*f[i];
+		Rt[1][i+6]-=h[1][2]*g[i]-t2*f[i];
 	}
-	Rt[0][9]-=h[1][0]*g[3]-t0*f[3];
-	Rt[0][10]-=h[1][1]*g[3]-t1*f[3];
-	Rt[0][11]-=h[1][2]*g[3]-t2*f[3];
+	Rt[1][9]-=h[1][0]*g[3]-t0*f[3];
+	Rt[1][10]-=h[1][1]*g[3]-t1*f[3];
+	Rt[1][11]-=h[1][2]*g[3]-t2*f[3];
 	
 	const double d0=h[0][0]*h[0][3]+h[0][1]*h[0][4], t3=d0*h[0][0]-h[0][3], t4=d0*h[0][1]-h[0][4], t5=d0*h[0][2];
-	for (int j=0; j<NVIEWS1; ++j)
+	for (int j=1; j<NVIEWS; ++j)
 	{
 		const double g[3]={h[0][0]*Rt[j][0]+h[0][1]*Rt[j][1]+h[0][2]*Rt[j][2], h[0][0]*Rt[j][3]+h[0][1]*Rt[j][4]+h[0][2]*Rt[j][5], h[0][0]*Rt[j][6]+h[0][1]*Rt[j][7]+h[0][2]*Rt[j][8]};
 		const double f[3]={h[0][3]*Rt[j][0]+h[0][4]*Rt[j][1], h[0][3]*Rt[j][3]+h[0][4]*Rt[j][4], h[0][3]*Rt[j][6]+h[0][4]*Rt[j][7]};

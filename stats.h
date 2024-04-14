@@ -98,7 +98,7 @@ double Hist::getMedian(const double &q)
 	const double Q=q*(double)n_tot; // fraction of the total frequency
 	
 	int m; // find class median, which is the first class with the value of cumulative frequency equal at least Q
-	double F=0.; // cumulative frequency of the class median
+	double F=0; // cumulative frequency of the class median
 	for (int i=0; i<NBINS; ++i)
 	{
 		F+=(double)n[i];
@@ -117,7 +117,7 @@ double Hist::getMedian(const double &q)
 double Hist::getMean()
 {
 	int n_tot=0; // total frequency
-	double sum_fx=0.;
+	double sum_fx=0;
 	for (int i=0; i<NBINS; ++i)
 	{
 		n_tot+=n[i];
@@ -145,12 +145,12 @@ double Hist::getFails(const double &q)
 
 
 // compute numerical error
-double numError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12])
+double numError(const double P[NVIEWS][12], const double Pgt[NVIEWS][12])
 {
-	double err=0.;
+	double err=0;
 	for (int k=0; k<12; ++k)
 	{
-		const double t1=P[0][k]-Pgt[0][k], t2=P[1][k]-Pgt[1][k];
+		const double t1=P[1][k]-Pgt[1][k], t2=P[2][k]-Pgt[2][k];
 		err+=t1*t1+t2*t2;
 	}
 	return 0.5*log10(err);
@@ -159,9 +159,9 @@ double numError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12])
 
 
 // compute rotational errors
-void rotError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double err[NVIEWS1])
+void rotError(const double P[NVIEWS][12], const double Pgt[NVIEWS][12], double err[NVIEWS])
 {
-	for (int i=0; i<NVIEWS1; ++i)
+	for (int i=1; i<NVIEWS; ++i)
 	{
 		double Rt[9];
 		transpose(P[i],Rt);
@@ -178,9 +178,9 @@ void rotError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double
 
 
 // compute translational errors
-void traError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double err[NVIEWS1])
+void traError(const double P[NVIEWS][12], const double Pgt[NVIEWS][12], double err[NVIEWS])
 {
-	for (int i=0; i<NVIEWS1; ++i)
+	for (int i=1; i<NVIEWS; ++i)
 	{
 		const double fac1=Pgt[i][9]*Pgt[i][9]+Pgt[i][10]*Pgt[i][10]+Pgt[i][11]*Pgt[i][11];
 		const double fac2=P[i][9]*P[i][9]+P[i][10]*P[i][10]+P[i][11]*P[i][11];
@@ -198,20 +198,20 @@ void traError(const double P[NVIEWS1][12], const double Pgt[NVIEWS1][12], double
 struct Stats
 {
 	Timer timer;
-	Hist hNum, hRot[NVIEWS1], hTra[NVIEWS1];
+	Hist hNum, hRot[NVIEWS], hTra[NVIEWS];
 	int ntrials;
-	double totalTime, errNum, errRot[2], errTra[2];
+	double totalTime, errNum, errRot[NVIEWS], errTra[NVIEWS];
 
 	Stats()
 	{
 		hNum.iniHist(-15,2);
-		for (int i=0; i<NVIEWS1; ++i)
+		for (int i=1; i<NVIEWS; ++i)
 		{
 			hRot[i].iniHist(-15,2);
 			hTra[i].iniHist(-15,2);
 		}
 		ntrials=0;
-		totalTime=0.;
+		totalTime=0;
 	}
 
 	void updateStats(const Camera &, const Camera &);
@@ -226,7 +226,7 @@ void Stats::updateStats(const Camera &cam_est, const Camera &cam_gt)
 	hNum.updateHist(errNum);
 	rotError(cam_est.Rt,cam_gt.Rt,errRot);
 	traError(cam_est.Rt,cam_gt.Rt,errTra);
-	for (int i=0; i<NVIEWS1; ++i)
+	for (int i=1; i<NVIEWS; ++i)
 	{
 		hRot[i].updateHist(errRot[i]);
 		hTra[i].updateHist(errTra[i]);
@@ -241,13 +241,13 @@ void Stats::printStats()
 	std::cout.precision(4);
 	std::cout << "\nNumber of threads: " << NUM_THREADS << "\n\n";
 	std::cout << "Number of successful trials: " << ntrials << "\n\n";
-	std::cout << "Fails (%): " << hNum.getFails(-2.) << "\n\n";
+	std::cout << "Fails (%): " << hNum.getFails(-2) << "\n\n";
 	std::cout << "Average runtime (ms): " << totalTime*((1e+3)/(double)ntrials) << "\n\n";
 	std::cout << "Median numerical error: " << hNum.getMedian(0.5) << "\n\n";
-	std::cout << "Mean numerical error: " << hNum.getMean() << "\n\n";
-	std::cout << "Median rot. error for 2nd camera (degrees): " << (180./PI)*pow(10.,hRot[0].getMedian(0.5)) << "\n\n";
-	std::cout << "Median transl. error for 2nd camera (degrees): " << (180./PI)*pow(10.,hTra[0].getMedian(0.5)) << "\n\n";
-	std::cout << "Median rot. error for 3rd camera (degrees): " << (180./PI)*pow(10.,hRot[1].getMedian(0.5)) << "\n\n";
-	std::cout << "Median transl. error for 3rd camera (degrees): " << (180./PI)*pow(10.,hTra[1].getMedian(0.5)) << "\n\n";
+	std::cout << "Average numerical error: " << hNum.getMean() << "\n\n";
+	std::cout << "Median rotational error for 2nd camera (degrees): " << (180./PI)*pow(10.,hRot[1].getMedian(0.5)) << "\n\n";
+	std::cout << "Median translational error for 2nd camera (degrees): " << (180./PI)*pow(10.,hTra[1].getMedian(0.5)) << "\n\n";
+	std::cout << "Median rotational error for 3rd camera (degrees): " << (180./PI)*pow(10.,hRot[2].getMedian(0.5)) << "\n\n";
+	std::cout << "Median translational error for 3rd camera (degrees): " << (180./PI)*pow(10.,hTra[2].getMedian(0.5)) << "\n\n";
 	std::cout << "Numerical error distribution:\n"; hNum.printHist();
 }

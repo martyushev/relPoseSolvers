@@ -84,12 +84,12 @@ int getEpipoles(const auxArrays_ns &S, const double u[2], double B1[6], double e
 	const double d[3]={(B1[0]*G1[3]-G1[0]*B1[3])*fh, (B1[0]*G1[4]-G1[0]*B1[4])*f, (B1[0]*G1[5]-G1[0]*B1[5])*fh};
 	
 	double p[5], v[4];
-	p[4]=d[0]*d[0]+g[0];
-	p[3]=d[0]*(-a+2.*d[1])+cd*g[0]+g[1];
-	p[2]=d[0]*(-ac+2.*d[2])+cd*g[1]+d[1]*(d[1]-a)+c2*g[0]+g[2];
-	p[1]=d[1]*(-ac+2.*d[2])+cd*g[2]-d[2]*a+c2*g[1];
 	p[0]=d[2]*(-ac+d[2])+c2*g[2];
-
+	p[1]=d[1]*(-ac+2.*d[2])+cd*g[2]-d[2]*a+c2*g[1];
+	p[2]=d[0]*(-ac+2.*d[2])+cd*g[1]+d[1]*(d[1]-a)+c2*g[0]+g[2];
+	p[3]=d[0]*(-a+2.*d[1])+cd*g[0]+g[1];
+	p[4]=d[0]*d[0]+g[0];
+	
 	const int nv=solveQuartic(p,v); // find all real roots of the quartic polynomial
 
 	for (int k=0; k<nv; ++k)
@@ -116,12 +116,12 @@ int getEpipoles(const auxArrays_ns &S, const double u[2], double B1[6], double e
 
 
 // output is either 1 or 0 (no solution found)
-bool getCameras_ns(const double A[NVIEWS+1][3][NPOINTS], const double Ht[9], const double B1[6], const double e[2][3], Camera &cam)
+bool getCameras_ns(const double q[NVIEWS][NPOINTS][3], const double K[18], const double Ht[9], const double B1[6], const double e[2][3], Camera &cam)
 {
 	const double l0[3]={B1[0]*e[0][0]+B1[1]*e[0][1]+B1[2]*e[0][2], B1[1]*e[0][0]+B1[3]*e[0][1]+B1[4]*e[0][2], B1[2]*e[0][0]+B1[4]*e[0][1]+B1[5]*e[0][2]};
 	const double l1[3]={B1[0]*e[1][0]+B1[1]*e[1][1]+B1[2]*e[1][2], B1[1]*e[1][0]+B1[3]*e[1][1]+B1[4]*e[1][2], B1[2]*e[1][0]+B1[4]*e[1][1]+B1[5]*e[1][2]};
 	const double xa[3]={l0[1]*l1[2]-l0[2]*l1[1], l0[2]*l1[0]-l0[0]*l1[2], l0[0]*l1[1]-l0[1]*l1[0]};
-	const double u[3]={0.,xa[2],-xa[1]}; // u is any non-zero vector
+	const double u[3]={0, xa[2], -xa[1]}; // u is any non-zero vector
 	const double a=(u[1]*xa[2]-u[2]*xa[1])*e[0][0]+(u[2]*xa[0]-u[0]*xa[2])*e[0][1]+(u[0]*xa[1]-u[1]*xa[0])*e[0][2];
 	const double b=l0[0]*u[0]+l0[1]*u[1]+l0[2]*u[2];
 	const double F[9]={a*B1[0], a*B1[1]+b*xa[2], a*B1[2]-b*xa[1], a*B1[1]-b*xa[2], a*B1[3], a*B1[4]+b*xa[0], a*B1[2]+b*xa[1], a*B1[4]-b*xa[0], a*B1[5]};
@@ -131,23 +131,23 @@ bool getCameras_ns(const double A[NVIEWS+1][3][NPOINTS], const double Ht[9], con
 	double U[9], Vt[9];
 	svdE(E,U,Vt);
 
-	cam.Rt[0][0]=U[0]*Vt[3]-U[1]*Vt[0]+U[2]*Vt[6];
-	cam.Rt[0][1]=U[0]*Vt[4]-U[1]*Vt[1]+U[2]*Vt[7];
-	cam.Rt[0][2]=U[0]*Vt[5]-U[1]*Vt[2]+U[2]*Vt[8];
-	cam.Rt[0][3]=U[3]*Vt[3]-U[4]*Vt[0]+U[5]*Vt[6];
-	cam.Rt[0][4]=U[3]*Vt[4]-U[4]*Vt[1]+U[5]*Vt[7];
-	cam.Rt[0][5]=U[3]*Vt[5]-U[4]*Vt[2]+U[5]*Vt[8];
-	cam.Rt[0][6]=U[6]*Vt[3]-U[7]*Vt[0]+U[8]*Vt[6];
-	cam.Rt[0][7]=U[6]*Vt[4]-U[7]*Vt[1]+U[8]*Vt[7];
-	cam.Rt[0][8]=U[6]*Vt[5]-U[7]*Vt[2]+U[8]*Vt[8];
-	cam.Rt[0][9]=U[2];
-	cam.Rt[0][10]=U[5];
-	cam.Rt[0][11]=U[8];
+	cam.Rt[1][0]=U[0]*Vt[3]-U[1]*Vt[0]+U[2]*Vt[6];
+	cam.Rt[1][1]=U[0]*Vt[4]-U[1]*Vt[1]+U[2]*Vt[7];
+	cam.Rt[1][2]=U[0]*Vt[5]-U[1]*Vt[2]+U[2]*Vt[8];
+	cam.Rt[1][3]=U[3]*Vt[3]-U[4]*Vt[0]+U[5]*Vt[6];
+	cam.Rt[1][4]=U[3]*Vt[4]-U[4]*Vt[1]+U[5]*Vt[7];
+	cam.Rt[1][5]=U[3]*Vt[5]-U[4]*Vt[2]+U[5]*Vt[8];
+	cam.Rt[1][6]=U[6]*Vt[3]-U[7]*Vt[0]+U[8]*Vt[6];
+	cam.Rt[1][7]=U[6]*Vt[4]-U[7]*Vt[1]+U[8]*Vt[7];
+	cam.Rt[1][8]=U[6]*Vt[5]-U[7]*Vt[2]+U[8]*Vt[8];
+	cam.Rt[1][9]=U[2];
+	cam.Rt[1][10]=U[5];
+	cam.Rt[1][11]=U[8];
 
 	double Q[NPOINTS][3];
-	if (!cheirality(A,cam.Rt[0],Q)) return 0;
+	if (!cheirality(q,cam.Rt[1],Q)) return 0;
 
-	return p4p(A,Q,cam); // use p4p algorithm to get 3rd camera matrix
+	return p4p(q[2][3],K,Q,cam); // use p4p algorithm to get 3rd camera matrix
 }
 
 
@@ -164,7 +164,7 @@ void costFunction_ns(const double &theta, const auxArrays_ns &S, Camera &cam)
 	cam.Err=1.;
 	for (int k=0; k<nv; ++k)
 	{
-		if (!getCameras_ns(S.A,S.Ht,B1,e[k],cam1[k])) continue;
+		if (!getCameras_ns(S.q,S.K,S.Ht,B1,e[k],cam1[k])) continue;
 		if (cam1[k].Err<cam.Err)
 		{
 			cam.Err=cam1[k].Err;
@@ -227,27 +227,27 @@ void golden_ns(const double lm[3], const auxArrays_ns &S, Camera &cam)
 // find local minima of the cost function
 int localMinima_ns(const auxArrays_ns &S, Camera cam[MAXLM])
 {
-	double theta[2*MAXLM+1], lm[MAXLM][3];
-	const double N=PI/(double)(2*MAXLM);
-	Camera cam1[2*MAXLM+1];
+	const double eps=PI/(double)(2*MAXLM);
+	double theta[2*MAXLM+2];
+	theta[0]=0;
+	for (int i=1; i<=2*MAXLM; ++i) theta[i]=theta[i-1]+eps;
+	theta[2*MAXLM+1]=PI+eps;
 	
-	theta[0]=0.;
-	for (int i=1; i<2*MAXLM+1; ++i) theta[i]=theta[i-1]+N;
-	
+	Camera cam1[2*MAXLM+2];
 	#pragma omp parallel for shared(theta,S,cam1) schedule(dynamic) num_threads(NUM_THREADS)
 	for (int i=0; i<2*MAXLM; ++i) costFunction_ns(theta[i],S,cam1[i]);
-	
 	cam1[2*MAXLM]=cam1[0];
+	cam1[2*MAXLM+1]=cam1[1];
 	
 	int n=0;
-	for (int i=1; i<2*MAXLM; ++i)
+	double lm[MAXLM][3];
+	for (int i=1; i<=2*MAXLM; ++i)
 	{ // find local minima
-		const int im1=i-1, ip1=i+1;
-		if (cam1[i].Err<cam1[im1].Err && cam1[i].Err<cam1[ip1].Err)
+		if (cam1[i].Err<cam1[i-1].Err && cam1[i].Err<cam1[i+1].Err)
 		{
-			lm[n][0]=theta[im1];
+			lm[n][0]=theta[i-1];
 			lm[n][1]=theta[i];
-			lm[n][2]=theta[ip1];
+			lm[n][2]=theta[i+1];
 			cam[n++]=cam1[i];
 		}
 	}
@@ -262,11 +262,10 @@ int localMinima_ns(const auxArrays_ns &S, Camera cam[MAXLM])
 
 // main function
 // output is either 1 or 0 (no solution found)
-bool relpose4p3v_ns(const double q[NVIEWS][3][NPOINTS], Camera &cam_est)
+bool r4p3v_ns(const double q[NVIEWS][NPOINTS][3], Camera &cam_est)
 {
 	auxArrays_ns S;
 	S.trans(q);
-	getA(S.A);
 	S.getBG();
 
 	Camera cam[MAXLM];

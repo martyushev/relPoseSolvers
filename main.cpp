@@ -9,8 +9,8 @@
 #include "math.h"
 #include "synthData.h"
 #include "p4p.h"
-#include "relpose4p3v.h"
-#include "relpose4p3v_ns.h"
+#include "r4p3v.h"
+#include "r4p3v_ns.h"
 #include "stats.h"
 
 
@@ -26,14 +26,14 @@ int main()
 
 	for (int i=1; i<=NTRIALS; ++i)
 	{
-		double q[NVIEWS][3][NPOINTS];
+		double q[NVIEWS][NPOINTS][3];
 		Camera cam_gt, cam_est;
 		
 		synthData(q,cam_gt); // generate synthetic image points and ground truth cameras
 		
 		stats.timer.start(); // start timer
 		
-		if (!relpose4p3v_ns(q,cam_est)) continue; // run solver
+		if (!r4p3v_ns(q,cam_est)) continue; // run solver
 
 		stats.totalTime+=stats.timer.stop(); // stop timer
 

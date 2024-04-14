@@ -3,8 +3,8 @@
 
 
 // evaluate polynomial p at s, Horner scheme
-// output is sextic polynomial p1 in one variable w
-inline void get_p1(const double p[22], const double &s, double p1[7])
+// output is sextic polynomial in one variable w
+void get_p1(const double p[22], const double &s, double p1[7])
 {
 	p1[0]=s*s*((((p[4]*s+p[3])*s+p[2])*s+p[1])*s+p[0]);
 	p1[1]=s*(((((p[10]*s+p[9])*s+p[8])*s+p[7])*s+p[6])*s+p[5]);
@@ -34,38 +34,38 @@ double get_u(const double F[9][9], const double &s, const double &w)
 
 
 // output is either 1 or 0 (no solution found)
-bool getCameras(const double A[NVIEWS+1][3][NPOINTS], const double B[9][10], const double &u, const double &s, const double &w, Camera &cam)
+bool getCameras(const double q[NVIEWS][NPOINTS][3], const double K[18], const double B[9][10], const double &u, const double &s, const double &w, Camera &cam)
 {
 	// get rotation matrix R by Cayley's formula
 	const double u2=u*u, v=u*s, v2=v*v, w2=w*w, uv=u*v, uw=u*w, vw=v*w;
 	const double fac=1./(1.+u2+v2+w2), fac2=2.*fac, tu=1.-u2, tvw=v2-w2;
-	cam.Rt[0][0]=(1.+u2-v2-w2)*fac;
-	cam.Rt[0][1]=(uv+w)*fac2;
-	cam.Rt[0][2]=(uw-v)*fac2;
-	cam.Rt[0][3]=(uv-w)*fac2;
-	cam.Rt[0][4]=(1.-u2+v2-w2)*fac;
-	cam.Rt[0][5]=(vw+u)*fac2;
-	cam.Rt[0][6]=(uw+v)*fac2;
-	cam.Rt[0][7]=(vw-u)*fac2;
-	cam.Rt[0][8]=(1.-u2-v2+w2)*fac;
+	cam.Rt[1][0]=(1.+u2-v2-w2)*fac;
+	cam.Rt[1][1]=(uv+w)*fac2;
+	cam.Rt[1][2]=(uw-v)*fac2;
+	cam.Rt[1][3]=(uv-w)*fac2;
+	cam.Rt[1][4]=(1.-u2+v2-w2)*fac;
+	cam.Rt[1][5]=(vw+u)*fac2;
+	cam.Rt[1][6]=(uw+v)*fac2;
+	cam.Rt[1][7]=(vw-u)*fac2;
+	cam.Rt[1][8]=(1.-u2-v2+w2)*fac;
 
 	const double B1[3]={B[0][0]*u2+B[0][3]*v2+B[0][4]*vw+B[0][5]*w2+B[0][6]*u+B[0][9], B[1][1]*uv+B[1][2]*uw+B[1][7]*v+B[1][8]*w, B[2][1]*uv+B[2][2]*uw+B[2][7]*v+B[2][8]*w};
 
 	// compute translation vector t2, formulas follow from the epipolar constraint for Q1
-	cam.Rt[0][9]=B1[2]*cam.Rt[0][2];
-	cam.Rt[0][10]=B1[2]*cam.Rt[0][5];
-	cam.Rt[0][11]=-B1[0]*cam.Rt[0][2]-B1[1]*cam.Rt[0][5];
+	cam.Rt[1][9]=B1[2]*cam.Rt[1][2];
+	cam.Rt[1][10]=B1[2]*cam.Rt[1][5];
+	cam.Rt[1][11]=-B1[0]*cam.Rt[1][2]-B1[1]*cam.Rt[1][5];
 	
 	// normalize translation vector so that ||t2|| = 1
-	const double fac1=1./sqrt(cam.Rt[0][9]*cam.Rt[0][9]+cam.Rt[0][10]*cam.Rt[0][10]+cam.Rt[0][11]*cam.Rt[0][11]);
-	cam.Rt[0][9]*=fac1;
-	cam.Rt[0][10]*=fac1;
-	cam.Rt[0][11]*=fac1;
+	const double fac1=1./sqrt(cam.Rt[1][9]*cam.Rt[1][9]+cam.Rt[1][10]*cam.Rt[1][10]+cam.Rt[1][11]*cam.Rt[1][11]);
+	cam.Rt[1][9]*=fac1;
+	cam.Rt[1][10]*=fac1;
+	cam.Rt[1][11]*=fac1;
 
 	double Q[NPOINTS][3];
-	if (!cheirality(A,cam.Rt[0],Q)) return 0;
+	if (!cheirality(q,cam.Rt[1],Q)) return 0;
 
-	return p4p(A,Q,cam); // use p4p algorithm to get 3rd camera matrix
+	return p4p(q[2][3],K,Q,cam); // use p4p algorithm to get 3rd camera matrix
 }
 
 
@@ -79,18 +79,18 @@ void costFunction(const double &s, const auxArrays &S, Camera &cam)
 	
 	int kmin;
 	Camera cam1[6];
-	cam.Err=1.;
+	cam.Err=1;
 	for (int k=0; k<nw; ++k)
 	{
 		const double u=get_u(S.F,s,w[k]);
-		if (!getCameras(S.A,S.B,u,s,w[k],cam1[k])) continue;
+		if (!getCameras(S.q,S.K,S.B,u,s,w[k],cam1[k])) continue;
 		if (cam1[k].Err<cam.Err)
 		{
 			cam.Err=cam1[k].Err;
 			kmin=k;
 		}
 	}
-	if (cam.Err==1.) return;
+	if (cam.Err==1) return;
 
 	cam=cam1[kmin];
 }
@@ -146,34 +146,31 @@ void golden(const double lm[3], const auxArrays &S, Camera &cam)
 // find local minima of the cost function
 int localMinima(const auxArrays &S, Camera cam[MAXLM])
 {
-	double s[2*MAXLM+1], lm[MAXLM][3];
-	const double N=1./(double)MAXLM;
-	Camera cam1[2*MAXLM+1];
-	
-	s[0]=-1.;
-	for (int i=1; i<MAXLM; ++i)
+	const double eps=1./(double)MAXLM;
+	double s[2*MAXLM+2];
+	s[MAXLM]=0;
+	for (int i=1; i<=MAXLM; ++i)
 	{
-		s[i]=s[i-1]+N;
-		s[2*MAXLM-1-i]=-s[i];
+		s[MAXLM+i]=(double)i*eps;
+		s[MAXLM-i]=-s[MAXLM+i];
 	}
-	s[2*MAXLM-1]=1.;
-	s[2*MAXLM]=-1./s[1];
+	s[2*MAXLM+1]=1.+eps;
 	
+	Camera cam1[2*MAXLM+2];
 	#pragma omp parallel for shared(s,S,cam1) schedule(dynamic) num_threads(NUM_THREADS)
-	for (int i=0; i<2*MAXLM-1; ++i) costFunction(s[i],S,cam1[i]);
-
-	cam1[2*MAXLM-1]=cam1[0];
-	cam1[2*MAXLM]=cam1[1];
+	for (int i=0; i<2*MAXLM; ++i) costFunction(s[i],S,cam1[i]);
+	cam1[2*MAXLM]=cam1[0];
+	cam1[2*MAXLM+1]=cam1[1];
 	
 	int n=0;
-	for (int i=1; i<2*MAXLM; ++i)
+	double lm[MAXLM][3];
+	for (int i=1; i<=2*MAXLM; ++i)
 	{ // find local minima
-		const int im1=i-1, ip1=i+1;
-		if (cam1[i].Err<cam1[im1].Err && cam1[i].Err<cam1[ip1].Err)
+		if (cam1[i].Err<cam1[i-1].Err && cam1[i].Err<cam1[i+1].Err)
 		{
-			lm[n][0]=s[im1];
+			lm[n][0]=s[i-1];
 			lm[n][1]=s[i];
-			lm[n][2]=s[ip1];
+			lm[n][2]=s[i+1];
 			cam[n++]=cam1[i];
 		}
 	}
@@ -198,11 +195,10 @@ int localMinima(const auxArrays &S, Camera cam[MAXLM])
 
 // main function
 // output is either 1 or 0 (no solution found)
-bool relpose4p3v(const double q[NVIEWS][3][NPOINTS], Camera &cam_est)
+bool r4p3v(const double q[NVIEWS][NPOINTS][3], Camera &cam_est)
 {
 	auxArrays S;
 	S.trans(q);
-	getA(S.A);
 	S.getB();
 	S.getF();
 	S.decicPoly();

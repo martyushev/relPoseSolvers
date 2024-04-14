@@ -1,20 +1,22 @@
 struct auxArrays_ns
 {
-	double A[NVIEWS+1][3][NPOINTS];
+	double q[NVIEWS][NPOINTS][3];
+	double K[18];
 	double Ht[9];
 	double B[2][6];
 	double V[4][9];
 	double G[5][6];
 
-	void trans(const double [NVIEWS][3][NPOINTS]);
+	void trans(const double [NVIEWS][NPOINTS][3]);
 	void getBG();
 };
 
 
 
-void auxArrays_ns::trans(const double q[NVIEWS][3][NPOINTS])
+void auxArrays_ns::trans(const double q0[NVIEWS][NPOINTS][3])
 {
-	iniPerm(q,A);
+	iniPerm(q0,q);
+	getK(q,K);
 }
 
 
@@ -26,27 +28,27 @@ void auxArrays_ns::getBG()
 	for (int i=0; i<NPOINTS; ++i)
 	{
 		const int i2=2*i, i3=i2+1;
-		C[i2][0]=C[i2][1]=C[i2][2]=0.;
-		C[i2][3]=-A[0][2][i]*A[1][0][i];
-		C[i2][4]=-A[0][2][i]*A[1][1][i];
-		C[i2][5]=-A[0][2][i]*A[1][2][i];
-		C[i2][6]=A[0][1][i]*A[1][0][i];
-		C[i2][7]=A[0][1][i]*A[1][1][i];
-		C[i2][8]=A[0][1][i]*A[1][2][i];
-		C[i3][3]=C[i3][4]=C[i3][5]=0.;
+		C[i2][0]=C[i2][1]=C[i2][2]=0;
+		C[i2][3]=-q[0][i][2]*q[1][i][0];
+		C[i2][4]=-q[0][i][2]*q[1][i][1];
+		C[i2][5]=-q[0][i][2]*q[1][i][2];
+		C[i2][6]=q[0][i][1]*q[1][i][0];
+		C[i2][7]=q[0][i][1]*q[1][i][1];
+		C[i2][8]=q[0][i][1]*q[1][i][2];
+		C[i3][3]=C[i3][4]=C[i3][5]=0;
 		C[i3][0]=-C[i2][3];
 		C[i3][1]=-C[i2][4];
 		C[i3][2]=-C[i2][5];
-		C[i3][6]=-A[0][0][i]*A[1][0][i];
-		C[i3][7]=-A[0][0][i]*A[1][1][i];
-		C[i3][8]=-A[0][0][i]*A[1][2][i];
+		C[i3][6]=-q[0][i][0]*q[1][i][0];
+		C[i3][7]=-q[0][i][0]*q[1][i][1];
+		C[i3][8]=-q[0][i][0]*q[1][i][2];
 
-		S[i][0]=A[0][0][i]*A[0][0][i];
-		S[i][1]=2.*A[0][1][i]*A[0][0][i];
-		S[i][2]=2.*A[0][2][i]*A[0][0][i];
-		S[i][3]=A[0][1][i]*A[0][1][i];
-		S[i][4]=2.*A[0][2][i]*A[0][1][i];
-		S[i][5]=A[0][2][i]*A[0][2][i];
+		S[i][0]=q[0][i][0]*q[0][i][0];
+		S[i][1]=2.*q[0][i][1]*q[0][i][0];
+		S[i][2]=2.*q[0][i][2]*q[0][i][0];
+		S[i][3]=q[0][i][1]*q[0][i][1];
+		S[i][4]=2.*q[0][i][2]*q[0][i][1];
+		S[i][5]=q[0][i][2]*q[0][i][2];
 	}
 	
 	nullQR<2*NPOINTS,9>(C,H);

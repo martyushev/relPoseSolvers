@@ -6,7 +6,7 @@
 
 
 // uniformly distributed random numbers from [a, b]
-inline double rnd(const double &a, const double &b)
+double rnd(const double &a, const double &b)
 {
 	return (b-a)*rand()/(double)RAND_MAX+a;
 }
@@ -29,12 +29,15 @@ void rndn(const double a, const double sigma, double x[2])
 // multiply two 3-by-3 matrices C=A*B
 void mult(const double A[9], const double B[9], double C[9])
 {
-	for (int i=0; i<3; ++i)
-	{
-		const int j=3*i;
-		for (int k=0; k<3; ++k)
-			C[j+k]=A[j]*B[k]+A[j+1]*B[k+3]+A[j+2]*B[k+6];
-	}
+	C[0]=A[0]*B[0]+A[1]*B[3]+A[2]*B[6];
+	C[1]=A[0]*B[1]+A[1]*B[4]+A[2]*B[7];
+	C[2]=A[0]*B[2]+A[1]*B[5]+A[2]*B[8];
+	C[3]=A[3]*B[0]+A[4]*B[3]+A[5]*B[6];
+	C[4]=A[3]*B[1]+A[4]*B[4]+A[5]*B[7];
+	C[5]=A[3]*B[2]+A[4]*B[5]+A[5]*B[8];
+	C[6]=A[6]*B[0]+A[7]*B[3]+A[8]*B[6];
+	C[7]=A[6]*B[1]+A[7]*B[4]+A[8]*B[7];
+	C[8]=A[6]*B[2]+A[7]*B[5]+A[8]*B[8];
 }
 
 
@@ -144,68 +147,34 @@ void transpose(const double A[9], double B[9])
 
 
 
-inline double getVol(const double A[3][NPOINTS], const int ind[NPOINTS])
-{
-	const double m1=A[1][ind[0]]*A[2][ind[1]]-A[2][ind[0]]*A[1][ind[1]],
-		m2=A[0][ind[1]]*A[2][ind[0]]-A[0][ind[0]]*A[2][ind[1]],
-		m3=A[0][ind[0]]*A[1][ind[1]]-A[0][ind[1]]*A[1][ind[0]];
-	
-	return fabs(A[0][ind[2]]*m1+A[1][ind[2]]*m2+A[2][ind[2]]*m3);
-}
-
-
-
-// permute image points to improve numerics
-inline void iniPerm(const double q[NVIEWS][3][NPOINTS], double A[NVIEWS+1][3][NPOINTS])
-{
-	int m=0, ind[4][NPOINTS]={{2,3,1,0}, {2,0,3,1}, {0,1,3,2}, {2,1,0,3}};
-	double maxVol=getVol(q[0],ind[0]);
-	for (int i=1; i<4; ++i)
-	{
-		const double vol=getVol(q[0],ind[i]);
-		if (vol<maxVol)
-		{
-			m=i;
-			maxVol=vol;
-		}
-	}
-
-	for (int j=0; j<NVIEWS; ++j)
-		for (int i=0; i<NPOINTS; ++i)
-			for (int k=0; k<3; ++k)
-				A[j][k][i]=q[j][k][ind[m][i]];
-}
-
-
-
 // triangulate scene point Q_i using the pair of cameras [I 0] and Rt = [R t]
-void triang2v(const double A[NVIEWS+1][3][NPOINTS], const double Rt[12], const int &i, double Q[NPOINTS][3])
+void triang2v(const double q[NVIEWS][NPOINTS][3], const double Rt[12], const int &i, double Q[NPOINTS][3])
 {
-	const double t1=((Rt[3]*A[0][0][i]+Rt[4]*A[0][1][i]+Rt[5]*A[0][2][i])*A[1][2][i]-(Rt[6]*A[0][0][i]+Rt[7]*A[0][1][i]+Rt[8]*A[0][2][i])*A[1][1][i]);
-	const double t2=((Rt[0]*A[0][0][i]+Rt[1]*A[0][1][i]+Rt[2]*A[0][2][i])*A[1][2][i]-(Rt[6]*A[0][0][i]+Rt[7]*A[0][1][i]+Rt[8]*A[0][2][i])*A[1][0][i]);
+	const double t1=(Rt[3]*q[0][i][0]+Rt[4]*q[0][i][1]+Rt[5]*q[0][i][2])*q[1][i][2]-(Rt[6]*q[0][i][0]+Rt[7]*q[0][i][1]+Rt[8]*q[0][i][2])*q[1][i][1];
+	const double t2=(Rt[0]*q[0][i][0]+Rt[1]*q[0][i][1]+Rt[2]*q[0][i][2])*q[1][i][2]-(Rt[6]*q[0][i][0]+Rt[7]*q[0][i][1]+Rt[8]*q[0][i][2])*q[1][i][0];
 	double Q3;
 	if (fabs(t1)>fabs(t2))
 	{
-		const double t=Rt[11]*A[1][1][i]-Rt[10]*A[1][2][i];
+		const double t=Rt[11]*q[1][i][1]-Rt[10]*q[1][i][2];
 		Q3=t/t1;
 	}
 	else
 	{
-		const double t=Rt[11]*A[1][0][i]-Rt[9]*A[1][2][i];
+		const double t=Rt[11]*q[1][i][0]-Rt[9]*q[1][i][2];
 		Q3=t/t2;
 	}
 
-	Q[i][0]=A[0][0][i]*Q3;
-	Q[i][1]=A[0][1][i]*Q3;
-	Q[i][2]=A[0][2][i]*Q3;
+	Q[i][0]=q[0][i][0]*Q3;
+	Q[i][1]=q[0][i][1]*Q3;
+	Q[i][2]=q[0][i][2]*Q3;
 }
 
 
 
 // check the cheirality constraint
-bool cheirality(const double A[NVIEWS+1][3][NPOINTS], double Rt[12], double Q[NPOINTS][3])
+bool cheirality(const double q[NVIEWS][NPOINTS][3], double Rt[12], double Q[NPOINTS][3])
 {
-	triang2v(A,Rt,0,Q); // triangulate first scene point
+	triang2v(q,Rt,0,Q); // triangulate 1st scene point
 	
 	const double c1=Q[0][2], c2=Rt[6]*Q[0][0]+Rt[7]*Q[0][1]+Rt[8]*Q[0][2]+Rt[11];
 	if (c1>0 && c2>0); // Rt2 is correct
@@ -226,7 +195,7 @@ bool cheirality(const double A[NVIEWS+1][3][NPOINTS], double Rt[12], double Q[NP
 			Rt[j3]=Rt[10]*w-Rt[j3];
 			Rt[j6]=Rt[11]*w-Rt[j6];
 		}
-		triang2v(A,Rt,0,Q);
+		triang2v(q,Rt,0,Q);
 		const double c1=Q[0][2], c2=Rt[6]*Q[0][0]+Rt[7]*Q[0][1]+Rt[8]*Q[0][2]+Rt[11];
 		if (c1>0 && c2>0); // Rt2 is correct
 		else // R2 is correct, t2=-t2
@@ -238,7 +207,7 @@ bool cheirality(const double A[NVIEWS+1][3][NPOINTS], double Rt[12], double Q[NP
 	}
 	
 	for (int i=0; i<NPOINTS; ++i)
-		triang2v(A,Rt,i,Q); // triangulate all scene points
+		triang2v(q,Rt,i,Q); // triangulate all scene points
 	
 	// check that the rest of scene points are in front of the first two cameras
 	// if any of them is not, then the solution is dropped
@@ -250,40 +219,76 @@ bool cheirality(const double A[NVIEWS+1][3][NPOINTS], double Rt[12], double Q[NP
 
 
 
-void getA(double A[NVIEWS][3][NPOINTS])
+double getVol(const double q[NPOINTS][3], const int ind[NPOINTS])
 {
-	for (int j=0; j<NVIEWS1; ++j)
+	const double m1=q[ind[0]][1]*q[ind[1]][2]-q[ind[0]][2]*q[ind[1]][1];
+	const double m2=q[ind[1]][0]*q[ind[0]][2]-q[ind[0]][0]*q[ind[1]][2];
+	const double m3=q[ind[0]][0]*q[ind[1]][1]-q[ind[1]][0]*q[ind[0]][1];
+	return fabs(q[ind[2]][0]*m1+q[ind[2]][1]*m2+q[ind[2]][2]*m3);
+}
+
+
+
+// permute image points to improve numerics
+void iniPerm(const double q0[NVIEWS][NPOINTS][3], double q[NVIEWS][NPOINTS][3])
+{
+	int m=0, ind[4][NPOINTS]={{2,3,1,0}, {2,0,3,1}, {0,1,3,2}, {2,1,0,3}};
+	double maxVol=getVol(q0[0],ind[0]);
+	for (int i=1; i<4; ++i)
+	{
+		const double vol=getVol(q0[0],ind[i]);
+		if (vol<maxVol)
+		{
+			m=i;
+			maxVol=vol;
+		}
+	}
+
+	for (int j=0; j<NVIEWS; ++j)
+		for (int i=0; i<NPOINTS; ++i) memcpy(q[j][i],q0[j][ind[m][i]],sizeof(double)*3);
+}
+
+
+
+void getK(double q[NVIEWS][NPOINTS][3], double K[18])
+{
+	for (int j=0; j<2; ++j)
 		for (int i=0; i<NPOINTS; ++i)
 		{
-			const double fac=1./A[j][2][i];
-			for (int k=0; k<3; ++k) A[j][k][i]*=fac;
+			const double fac=1./q[j][i][2];
+			for (int k=0; k<3; ++k) q[j][i][k]*=fac;
 		}
+	double fac=1./q[2][3][2];
+	for (int k=0; k<3; ++k) q[2][3][k]*=fac;
 	
 	for (int i=0; i<3; ++i)
 	{
-		const double fac=1./sqrt(A[2][0][i]*A[2][0][i]+A[2][1][i]*A[2][1][i]+A[2][2][i]*A[2][2][i]);
-		for (int k=0; k<3; ++k) A[2][k][i]*=fac;
+		const double fac=1./sqrt(q[2][i][0]*q[2][i][0]+q[2][i][1]*q[2][i][1]+q[2][i][2]*q[2][i][2]);
+		for (int k=0; k<3; ++k) q[2][i][k]*=fac;
 	}
-	double fac=1./A[2][2][3];
-	for (int k=0; k<3; ++k) A[2][k][3]*=fac;
 	
-	const double m1=A[2][1][0]*A[2][2][1]-A[2][2][0]*A[2][1][1],
-		m2=A[2][0][1]*A[2][2][0]-A[2][0][0]*A[2][2][1],
-		m3=A[2][0][0]*A[2][1][1]-A[2][0][1]*A[2][1][0];
+	const double m1=q[2][0][1]*q[2][1][2]-q[2][0][2]*q[2][1][1];
+	const double m2=q[2][1][0]*q[2][0][2]-q[2][0][0]*q[2][1][2];
+	const double m3=q[2][0][0]*q[2][1][1]-q[2][1][0]*q[2][0][1];
 
-	const double idet=1./(A[2][0][2]*m1+A[2][1][2]*m2+A[2][2][2]*m3);
+	K[17]=1./(q[2][2][0]*m1+q[2][2][1]*m2+q[2][2][2]*m3);
 	// inverse of matrix
-	A[3][0][0]=(A[2][1][1]*A[2][2][2]-A[2][2][1]*A[2][1][2])*idet;
-	A[3][0][1]=(A[2][2][0]*A[2][1][2]-A[2][1][0]*A[2][2][2])*idet;
-	A[3][0][2]=m1*idet;
-	A[3][1][0]=(A[2][0][2]*A[2][2][1]-A[2][0][1]*A[2][2][2])*idet;
-	A[3][1][1]=(A[2][0][0]*A[2][2][2]-A[2][0][2]*A[2][2][0])*idet;
-	A[3][1][2]=m2*idet;
-	A[3][2][0]=(A[2][0][1]*A[2][1][2]-A[2][0][2]*A[2][1][1])*idet;
-	A[3][2][1]=(A[2][0][2]*A[2][1][0]-A[2][0][0]*A[2][1][2])*idet;
-	A[3][2][2]=m3*idet;
+	K[0]=(q[2][1][1]*q[2][2][2]-q[2][1][2]*q[2][2][1])*K[17];
+	K[1]=(q[2][0][2]*q[2][2][1]-q[2][0][1]*q[2][2][2])*K[17];
+	K[2]=m1*K[17];
+	K[3]=(q[2][2][0]*q[2][1][2]-q[2][1][0]*q[2][2][2])*K[17];
+	K[4]=(q[2][0][0]*q[2][2][2]-q[2][2][0]*q[2][0][2])*K[17];
+	K[5]=m2*K[17];
+	K[6]=(q[2][1][0]*q[2][2][1]-q[2][2][0]*q[2][1][1])*K[17];
+	K[7]=(q[2][2][0]*q[2][0][1]-q[2][0][0]*q[2][2][1])*K[17];
+	K[8]=m3*K[17];
 
-	A[3][0][3]=2.*(A[2][0][1]*A[2][0][2]+A[2][1][1]*A[2][1][2]+A[2][2][1]*A[2][2][2]);
-	A[3][1][3]=2.*(A[2][0][0]*A[2][0][2]+A[2][1][0]*A[2][1][2]+A[2][2][0]*A[2][2][2]);
-	A[3][2][3]=2.*(A[2][0][0]*A[2][0][1]+A[2][1][0]*A[2][1][1]+A[2][2][0]*A[2][2][1]);
+	K[9]=2.*(q[2][1][0]*q[2][2][0]+q[2][1][1]*q[2][2][1]+q[2][1][2]*q[2][2][2]);
+	K[10]=2.*(q[2][0][0]*q[2][2][0]+q[2][0][1]*q[2][2][1]+q[2][0][2]*q[2][2][2]);
+	K[11]=2.*(q[2][0][0]*q[2][1][0]+q[2][0][1]*q[2][1][1]+q[2][0][2]*q[2][1][2]);
+	K[12]=K[9]*K[9];
+	K[13]=K[10]*K[10];
+	K[14]=K[11]*K[11];
+	K[15]=K[9]*K[11];
+	K[16]=K[12]+K[14];
 }

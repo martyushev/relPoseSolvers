@@ -1,7 +1,7 @@
 #define THIRD 0.3333333333333333333
 #define SQRT3 1.7320508075688772935
 #define MAXIT1 50 // number of iterations for root isolating and polishing
-#define ACC 1.e-14 // root is polished to an approximate accuracy ACC
+#define ACC 1.e-15 // root is polished to an approximate accuracy ACC
 
 
 
@@ -314,7 +314,7 @@ int solveCubic(const double a[3], double x[3])
 			x[1]=p-s; // multiple root
 			return 2;
 		}
-		else
+		else // g==0
 		{ // 3 multiple real roots
 			x[0]=p;
 			return 1;
